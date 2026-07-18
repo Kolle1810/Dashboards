@@ -16,7 +16,7 @@
     --baseline:       #c3c2b7;
     --border:         rgba(11,11,11,0.10);
     --series-a:       #2a78d6;   /* Person A – Blau */
-    --series-b:       #008300;   /* Person B – Grün */
+    --series-b:       #e87ba4;   /* Person B – Rosa */
     --accent:         #2a78d6;
     --accent-soft:    #cde2fb;
     --good:           #006300;
@@ -35,7 +35,7 @@
       --baseline:       #383835;
       --border:         rgba(255,255,255,0.10);
       --series-a:       #3987e5;
-      --series-b:       #008300;
+      --series-b:       #d55181;
       --accent:         #3987e5;
       --accent-soft:    #184f95;
       --good:           #0ca30c;
@@ -260,24 +260,12 @@
         <div class="value" id="ovTodos">–</div>
         <div class="sub" id="ovTodosSub"></div>
       </div>
-      <div class="tile">
-        <div class="label">Nächster Termin</div>
-        <div class="value" id="ovNextEvent" style="font-size:19px;">–</div>
-        <div class="sub" id="ovNextEventSub"></div>
-      </div>
     </div>
 
-    <div class="two-col">
-      <div class="card">
-        <h2>📝 Themen fürs nächste Meeting</h2>
-        <p class="hint">Was ihr beim nächsten Paar-Meeting besprechen wollt.</p>
-        <ul class="plain" id="ovTopics"></ul>
-      </div>
-      <div class="card">
-        <h2>📅 Bevorstehende Termine</h2>
-        <p class="hint">Die nächsten Ereignisse aus eurer Terminliste.</p>
-        <ul class="plain" id="ovEvents"></ul>
-      </div>
+    <div class="card">
+      <h2>📝 Themen fürs nächste Meeting</h2>
+      <p class="hint">Was ihr beim nächsten Paar-Meeting besprechen wollt.</p>
+      <ul class="plain" id="ovTopics"></ul>
     </div>
   </section>
 
@@ -316,7 +304,7 @@
       <h2>Ausgabe eintragen</h2>
       <p class="hint">Tragt ein, wer was bezahlt hat. Das Dashboard rechnet automatisch aus, wer wem etwas schuldet (50/50).</p>
       <form class="row" id="expenseForm">
-        <input type="date" id="expDate" required>
+        <input type="month" id="expDate" required>
         <input type="text" id="expDesc" placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;" required>
         <input type="text" id="expAmount" placeholder="Betrag in €" style="width:110px;" required inputmode="decimal">
         <select id="expPayer"></select>
@@ -369,7 +357,7 @@
       <h2 style="margin-top:18px;">Alle Einträge des Monats</h2>
       <table class="data" id="expenseTableWrap">
         <thead>
-          <tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Bezahlt von</th><th class="num">Betrag</th><th></th></tr>
+          <tr><th>Beschreibung</th><th>Kategorie</th><th>Bezahlt von</th><th class="num">Betrag</th><th></th></tr>
         </thead>
         <tbody id="expenseTable"></tbody>
       </table>
@@ -379,17 +367,6 @@
 
   <!-- KALENDER -->
   <section class="tab" id="tab-calendar">
-    <div class="card">
-      <h2>Eure Termine &amp; Countdowns</h2>
-      <p class="hint">Wichtige Daten wie Jahrestag, Urlaub oder Konzerte – mit automatischem Countdown.</p>
-      <form class="row" id="eventForm">
-        <input type="date" id="eventDate" required>
-        <input type="text" id="eventTitle" placeholder="Was steht an? z. B. „Jahrestag“" style="flex:1; min-width:200px;" required>
-        <button class="primary" type="submit">Hinzufügen</button>
-      </form>
-      <ul class="plain" id="eventList"></ul>
-    </div>
-
     <div class="card">
       <h2>Google Kalender</h2>
       <p class="hint">Hier könnt ihr euren gemeinsamen Google-Kalender direkt anzeigen lassen.</p>
@@ -405,7 +382,7 @@
           <li>Kopiere die Adresse unter <b>„Öffentliche URL für diesen Kalender“</b> bzw. den Link aus dem <b>„Einbettungscode“</b> (die Adresse, die mit <code>https://calendar.google.com/calendar/embed?...</code> beginnt).</li>
           <li>Füge diese Adresse hier im Dashboard unter <b>⚙️ Einstellungen → Google-Kalender-Adresse</b> ein und speichere.</li>
         </ol>
-        <p><b>Hinweis:</b> Damit der Kalender hier angezeigt werden kann, muss er in den Google-Einstellungen freigegeben („öffentlich“) sein – oder ihr seid im selben Browser bei Google angemeldet. Eure Countdown-Liste oben funktioniert immer, ganz ohne Google.</p>
+        <p><b>Hinweis:</b> Damit der Kalender hier angezeigt werden kann, muss er in den Google-Einstellungen freigegeben („öffentlich“) sein – oder ihr seid im selben Browser bei Google angemeldet.</p>
       </details>
     </div>
   </section>
@@ -518,11 +495,10 @@
 const STORE_KEY = "paarDashboard.v1";
 
 const defaultState = () => ({
-  settings: { nameA: "Kolja", nameB: "Partnerin", calendarUrl: "" },
+  settings: { nameA: "Kolja", nameB: "Carina", calendarUrl: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
-  expenses: [],    // {id, date, desc, amount, payer:'A'|'B', category}
-  events: [],      // {id, date, title}
+  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category}
   todos: [],       // {id, text, who:'A'|'B'|'both', done}
   gifts: { A: [], B: [], hiddenA: false, hiddenB: false }, // Ideen FÜR Person A / B
   projects: []     // {id, name, notes, items:[{id,text,done}]}
@@ -546,19 +522,6 @@ const todayStr = () => {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 };
-function daysUntil(dateStr) {
-  const t = new Date(todayStr() + "T00:00:00");
-  const d = new Date(dateStr + "T00:00:00");
-  return Math.round((d - t) / 86400000);
-}
-function countdownBadge(dateStr) {
-  const n = daysUntil(dateStr);
-  if (n < 0)  return `<span class="badge">vorbei</span>`;
-  if (n === 0) return `<span class="badge today">Heute! 🎉</span>`;
-  if (n === 1) return `<span class="badge soon">morgen</span>`;
-  if (n <= 14) return `<span class="badge soon">in ${n} Tagen</span>`;
-  return `<span class="badge">in ${n} Tagen</span>`;
-}
 function parseAmount(str) {
   const v = parseFloat(String(str).replace(/\./g, "").replace(",", "."));
   return isNaN(v) ? null : Math.round(v * 100) / 100;
@@ -596,19 +559,10 @@ function renderOverview() {
   document.getElementById("ovTodos").textContent = open;
   document.getElementById("ovTodosSub").textContent = open === 0 ? "Alles erledigt! 🎉" : "noch zu erledigen";
 
-  const upcoming = state.events.filter(e => daysUntil(e.date) >= 0).sort((a, b) => a.date.localeCompare(b.date));
-  const next = upcoming[0];
-  document.getElementById("ovNextEvent").textContent = next ? next.title : "–";
-  document.getElementById("ovNextEventSub").innerHTML = next ? fmtDate(next.date) + " · " + countdownBadge(next.date) : "Noch nichts geplant";
-
   const topics = state.topics.filter(t => !t.done).slice(0, 6);
   document.getElementById("ovTopics").innerHTML = topics.length
     ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
     : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
-
-  document.getElementById("ovEvents").innerHTML = upcoming.slice(0, 5).map(e =>
-    `<li><span class="grow">${esc(e.title)}</span><span class="badge">${fmtDate(e.date)}</span>${countdownBadge(e.date)}</li>`
-  ).join("") || `<li><span class="empty">Keine Termine eingetragen.</span></li>`;
 
   document.getElementById("headerNames").textContent = state.settings.nameA + " & " + state.settings.nameB;
 }
@@ -709,7 +663,7 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
   });
   document.getElementById("expDesc").value = "";
   document.getElementById("expAmount").value = "";
-  currentMonth = document.getElementById("expDate").value.slice(0, 7);
+  currentMonth = document.getElementById("expDate").value;
   save(); renderAll();
 });
 
@@ -736,11 +690,10 @@ function renderCosts() {
 }
 
 function renderExpenseTable() {
-  const list = monthExpenses(currentMonth).sort((a, b) => b.date.localeCompare(a.date));
+  const list = [...monthExpenses(currentMonth)].reverse();
   const tbody = document.getElementById("expenseTable");
   tbody.innerHTML = list.map(e => `
     <tr>
-      <td>${fmtDate(e.date)}</td>
       <td>${esc(e.desc)}</td>
       <td><span class="badge">${esc(e.category)}</span></td>
       <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}</span></td>
@@ -850,27 +803,8 @@ document.getElementById("costChart").addEventListener("mousemove", e => {
 });
 document.getElementById("costChart").addEventListener("mouseleave", () => tooltip.style.display = "none");
 
-/* ---------- Kalender / Termine ---------- */
-document.getElementById("eventForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.events.push({
-    id: uid(),
-    date: document.getElementById("eventDate").value,
-    title: document.getElementById("eventTitle").value.trim()
-  });
-  document.getElementById("eventTitle").value = "";
-  save(); renderAll();
-});
-function renderEvents() {
-  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
-  document.getElementById("eventList").innerHTML = sorted.map(e => `
-    <li>
-      <span class="grow">${esc(e.title)}</span>
-      <span class="badge">${fmtDate(e.date)}</span>
-      ${countdownBadge(e.date)}
-      <button class="icon" data-del-event="${e.id}" title="Löschen">✕</button>
-    </li>`).join("") || `<div class="empty">Noch keine Termine – tragt z. B. euren Jahrestag ein! ❤️</div>`;
-
+/* ---------- Kalender ---------- */
+function renderCalendar() {
   const container = document.getElementById("calendarContainer");
   const url = state.settings.calendarUrl;
   if (url && url.startsWith("https://calendar.google.com/")) {
@@ -881,10 +815,6 @@ function renderEvents() {
     container.innerHTML = `<div class="empty">Noch kein Kalender verbunden. So geht's: 👇</div>`;
   }
 }
-document.getElementById("eventList").addEventListener("click", e => {
-  const del = e.target.closest("[data-del-event]");
-  if (del) { state.events = state.events.filter(x => x.id !== del.dataset.delEvent); save(); renderAll(); }
-});
 
 /* ---------- To-dos ---------- */
 document.getElementById("todoForm").addEventListener("submit", e => {
@@ -1068,12 +998,10 @@ document.getElementById("demoBtn").addEventListener("click", () => {
     { id: uid(), text: "Urlaubsbudget festlegen", done: false },
     { id: uid(), text: "Wochenendplanung: Eltern besuchen?", done: false });
   state.expenses.push(
-    { id: uid(), date: m + "-03", desc: "Wocheneinkauf", amount: 87.40, payer: "A", category: "Lebensmittel" },
-    { id: uid(), date: m + "-05", desc: "Kinoabend", amount: 32.00, payer: "B", category: "Freizeit" },
-    { id: uid(), date: m + "-10", desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
-    { id: uid(), date: m + "-12", desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" });
-  const in14 = new Date(Date.now() + 14 * 86400000);
-  state.events.push({ id: uid(), date: in14.toISOString().slice(0, 10), title: "Konzertabend 🎶" });
+    { id: uid(), date: m, desc: "Wocheneinkauf", amount: 87.40, payer: "A", category: "Lebensmittel" },
+    { id: uid(), date: m, desc: "Kinoabend", amount: 32.00, payer: "B", category: "Freizeit" },
+    { id: uid(), date: m, desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
+    { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" });
   state.todos.push(
     { id: uid(), text: "Wocheneinkauf erledigen", who: "A", done: false },
     { id: uid(), text: "Bad putzen", who: "B", done: false },
@@ -1104,14 +1032,14 @@ function renderAll() {
   renderTopics();
   renderProtocols();
   renderCosts();
-  renderEvents();
+  renderCalendar();
   renderTodos();
   renderGifts();
   renderProjects();
 }
 
 document.getElementById("protocolDate").value = todayStr();
-document.getElementById("expDate").value = todayStr();
+document.getElementById("expDate").value = currentMonth;
 renderAll();
 window.addEventListener("resize", () => renderCosts());
 </script>
