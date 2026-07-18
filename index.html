@@ -504,8 +504,17 @@
     </div>
 
     <div class="card">
+      <h2>Geräteübergreifende Synchronisierung</h2>
+      <p class="hint">Der API-Schlüssel aus <code>api.php</code> auf eurem NAS – trägt jede*r auf jedem Gerät identisch ein. Damit sehen Kolja und Carina auf all ihren Geräten automatisch dieselben Daten, zentral gespeichert auf eurem NAS.</p>
+      <form class="row" id="apiKeyForm">
+        <input type="text" id="apiKey" placeholder="Euer gemeinsamer API-Schlüssel" style="flex:1; min-width:220px;">
+        <button class="primary" type="submit">Speichern</button>
+      </form>
+    </div>
+
+    <div class="card">
       <h2>Daten sichern &amp; teilen</h2>
-      <p class="hint">Eure Daten werden nur in diesem Browser gespeichert. Mit „Exportieren“ ladet ihr eine Sicherungsdatei herunter – die könnt ihr euch gegenseitig schicken (z. B. per Messenger) und beim anderen mit „Importieren“ einlesen. So bleibt ihr auf dem gleichen Stand.</p>
+      <p class="hint">Eure Daten werden automatisch mit eurem NAS abgeglichen (sobald der API-Schlüssel oben eingetragen ist). Zusätzlich könnt ihr hier eine Sicherungsdatei herunterladen – praktisch als Backup oder falls das NAS mal nicht erreichbar ist.</p>
       <div class="row" style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="ghost" id="exportBtn">⬇️ Daten exportieren</button>
         <label class="ghost" style="display:inline-block; cursor:pointer;">
@@ -518,7 +527,7 @@
   </section>
 
 </main>
-<div class="footer-note">Unser Dashboard · Alle Daten bleiben privat in eurem Browser</div>
+<div class="footer-note">Unser Dashboard · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
 
 <script>
 "use strict";
@@ -527,7 +536,7 @@
 const STORE_KEY = "paarDashboard.v1";
 
 const defaultState = () => ({
-  settings: { nameA: "Kolja", nameB: "Carina", calendarIdA: "", calendarIdB: "", googleClientId: "" },
+  settings: { nameA: "Kolja", nameB: "Carina", calendarIdA: "", calendarIdB: "", googleClientId: "", apiKey: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
@@ -535,22 +544,79 @@ const defaultState = () => ({
   gifts: { A: [], B: [], others: [], hiddenA: false, hiddenB: false }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
 });
+// Verschachtelte Objekte einzeln mit den Defaults zusammenführen, damit neu
+// hinzugekommene Felder (z. B. "gifts.others") bei älteren gespeicherten
+// Daten nicht fehlen und nichts abstürzt.
+function mergeWithDefaults(parsed) {
+  const merged = Object.assign(defaultState(), parsed || {});
+  merged.settings = Object.assign(defaultState().settings, (parsed && parsed.settings) || {});
+  merged.gifts = Object.assign(defaultState().gifts, (parsed && parsed.gifts) || {});
+  return merged;
+}
 
 let state = load();
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    const merged = Object.assign(defaultState(), parsed);
-    // Verschachtelte Objekte einzeln zusammenführen, damit neu hinzugekommene
-    // Felder (z. B. "gifts.others") bei älteren gespeicherten Daten nicht fehlen.
-    merged.settings = Object.assign(defaultState().settings, parsed.settings || {});
-    merged.gifts = Object.assign(defaultState().gifts, parsed.gifts || {});
-    return merged;
+    return mergeWithDefaults(JSON.parse(raw));
   } catch { return defaultState(); }
 }
-function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  syncToServer();
+}
+
+/* ---------- Server-Synchronisierung (NAS) ---------- */
+let syncTimer = null;
+function syncToServer() {
+  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    fetch("api.php?action=save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Api-Key": state.settings.apiKey },
+      body: JSON.stringify(state)
+    }).then(res => {
+      setSyncStatus(res.ok ? "ok" : "error");
+    }).catch(() => setSyncStatus("error"));
+  }, 400);
+}
+async function syncFromServer() {
+  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
+  try {
+    const res = await fetch("api.php?action=load", {
+      cache: "no-store",
+      headers: { "X-Api-Key": state.settings.apiKey }
+    });
+    if (!res.ok) { setSyncStatus("error"); return; }
+    const serverState = await res.json();
+    if (!serverState || typeof serverState !== "object" || !Object.keys(serverState).length) {
+      setSyncStatus("ok");
+      return; // NAS hat noch keine Daten -> lokalen Stand einmalig hochladen
+    }
+    if (JSON.stringify(serverState) === JSON.stringify(state)) { setSyncStatus("ok"); return; }
+    state = mergeWithDefaults(serverState);
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    renderAll();
+    setSyncStatus("ok");
+  } catch {
+    setSyncStatus("error");
+  }
+}
+function setSyncStatus(kind) {
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  if (kind === "ok") {
+    el.textContent = "🔗 Synchronisiert · " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    el.style.color = "var(--good)";
+  } else if (kind === "unset") {
+    el.textContent = "";
+  } else {
+    el.textContent = "⚠️ NAS nicht erreichbar – Änderungen bleiben lokal gespeichert";
+    el.style.color = "var(--critical)";
+  }
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -1214,6 +1280,14 @@ document.getElementById("clientIdForm").addEventListener("submit", e => {
   alert("Gespeichert! Klickt im Tab „Kalender“ auf „Mit Google verbinden“.");
 });
 
+document.getElementById("apiKeyForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.settings.apiKey = document.getElementById("apiKey").value.trim();
+  save(); renderAll();
+  syncFromServer();
+  alert("Gespeichert! Wird jetzt mit dem NAS abgeglichen.");
+});
+
 document.getElementById("exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -1284,6 +1358,7 @@ function fillSelects() {
   document.getElementById("calIdA").placeholder = "Kalender-ID von " + state.settings.nameA + ", z. B. name@gmail.com";
   document.getElementById("calIdB").placeholder = "Kalender-ID von " + state.settings.nameB + ", z. B. name@gmail.com";
   document.getElementById("googleClientId").value = state.settings.googleClientId;
+  document.getElementById("apiKey").value = state.settings.apiKey;
 }
 function renderAll() {
   fillSelects();
@@ -1302,6 +1377,10 @@ document.getElementById("protocolDate").value = todayStr();
 document.getElementById("expDate").value = currentMonth;
 renderAll();
 window.addEventListener("resize", () => renderCosts());
+
+syncFromServer();
+setInterval(() => { if (!document.hidden) syncFromServer(); }, 20000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncFromServer(); });
 </script>
 </body>
 </html>

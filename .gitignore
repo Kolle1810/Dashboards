@@ -1,0 +1,3 @@
+# Zentrale Datenablage auf dem NAS - enthält echte private Daten,
+# darf niemals ins (öffentliche) Repository gelangen.
+data.json
