@@ -27,74 +27,6 @@
     --critical:       #d03b3b;
     --shadow:         0 1px 3px rgba(11,11,11,0.06);
   }
-  @media (prefers-color-scheme: dark) {
-    :root:where(:not([data-theme="light"])) {
-      color-scheme: dark;
-      --page:           #170e11;
-      --surface:        #211419;
-      --text-primary:   #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted:     #898781;
-      --grid:           #2c2024;
-      --baseline:       #4a333b;
-      --border:         rgba(201,138,153,0.22);
-      --series-a:       #3987e5;
-      --series-b:       #d55181;
-      --base:           #c98a99;
-      --base-soft:      #33222a;
-      --base-ink:       #2b0e14;
-      --accent:         #7fb8e3;
-      --accent-soft:    #17293a;
-      --accent-ink:     #0a1e30;
-      --good:           #6fbf7a;
-      --critical:       #e66767;
-      --shadow:         none;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --page:           #170e11;
-    --surface:        #211419;
-    --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted:     #898781;
-    --grid:           #2c2024;
-    --baseline:       #4a333b;
-    --border:         rgba(201,138,153,0.22);
-    --series-a:       #3987e5;
-    --series-b:       #d55181;
-    --base:           #c98a99;
-    --base-soft:      #33222a;
-    --base-ink:       #2b0e14;
-    --accent:         #7fb8e3;
-    --accent-soft:    #17293a;
-    --accent-ink:     #0a1e30;
-    --good:           #6fbf7a;
-    --critical:       #e66767;
-    --shadow:         none;
-  }
-  :root[data-theme="light"] {
-    color-scheme: light;
-    --page:           #fcedf0;
-    --surface:        #fdf7f8;
-    --text-primary:   #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted:     #898781;
-    --grid:           #f5dee2;
-    --baseline:       #e3b8c3;
-    --border:         rgba(140,50,75,0.16);
-    --series-a:       #2a78d6;
-    --series-b:       #e87ba4;
-    --base:           #f3bfc9;
-    --base-soft:      #fcedf0;
-    --base-ink:       #5c2430;
-    --accent:         #9acbee;
-    --accent-soft:    #e3f1fc;
-    --accent-ink:     #163651;
-    --good:           #2e7a45;
-    --critical:       #d03b3b;
-    --shadow:         0 1px 3px rgba(11,11,11,0.06);
-  }
 
   * { box-sizing: border-box; }
   body {
@@ -122,11 +54,6 @@
   }
   .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--base-ink); }
   .app-title small { font-weight: 400; color: var(--base-ink); opacity: 0.75; font-size: 13px; margin-left: 8px; }
-  #themeToggle {
-    background: none; border: 1px solid color-mix(in srgb, var(--base-ink) 35%, transparent); border-radius: 8px;
-    padding: 5px 10px; cursor: pointer; color: var(--base-ink); font-size: 14px; opacity: 0.9;
-  }
-  #themeToggle:hover { opacity: 1; }
   nav {
     display: flex; gap: 4px; max-width: 1000px; margin: 12px auto 0;
     overflow-x: auto;
@@ -265,7 +192,6 @@
 <header>
   <div class="header-row">
     <h1 class="app-title">💑 Unser Dashboard <small id="headerNames"></small></h1>
-    <button id="themeToggle" title="Hell/Dunkel umschalten">🌓</button>
   </div>
   <nav id="mainNav">
     <button data-tab="overview" class="active">Übersicht</button>
@@ -597,15 +523,6 @@ document.getElementById("mainNav").addEventListener("click", e => {
   if (!btn) return;
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b === btn));
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + btn.dataset.tab));
-});
-
-/* ---------- Hell/Dunkel ---------- */
-document.getElementById("themeToggle").addEventListener("click", () => {
-  const root = document.documentElement;
-  const isDark = root.dataset.theme === "dark" ||
-    (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  root.dataset.theme = isDark ? "light" : "dark";
-  renderCosts(); // Diagrammfarben neu zeichnen
 });
 
 /* ---------- Übersicht ---------- */
