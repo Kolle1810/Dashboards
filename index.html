@@ -15,11 +15,15 @@
     --grid:           #e1e0d9;
     --baseline:       #c3c2b7;
     --border:         rgba(11,11,11,0.10);
-    --series-a:       #2a78d6;   /* Person A – Blau */
-    --series-b:       #e87ba4;   /* Person B – Rosa */
-    --accent:         #2a78d6;
-    --accent-soft:    #cde2fb;
-    --good:           #006300;
+    --series-a:       #2a78d6;   /* Kolja – Blau */
+    --series-b:       #e87ba4;   /* Carina – Rosa */
+    --accent:         #12805f;   /* Mintgrün */
+    --accent-soft:    #d7f0e6;
+    --accent-ink:     #ffffff;   /* Text auf Mint-Flächen */
+    --accent-2:       #e8b93e;   /* Butteryellow */
+    --accent-2-soft:  #fbefc8;
+    --accent-2-ink:   #2b2205;   /* Text auf Gelb-Flächen */
+    --good:           #12805f;
     --critical:       #d03b3b;
     --shadow:         0 1px 3px rgba(11,11,11,0.06);
   }
@@ -36,9 +40,13 @@
       --border:         rgba(255,255,255,0.10);
       --series-a:       #3987e5;
       --series-b:       #d55181;
-      --accent:         #3987e5;
-      --accent-soft:    #184f95;
-      --good:           #0ca30c;
+      --accent:         #34c795;
+      --accent-soft:    #123d2f;
+      --accent-ink:     #08211a;
+      --accent-2:       #f0c860;
+      --accent-2-soft:  #4a3712;
+      --accent-2-ink:   #2b2205;
+      --good:           #34c795;
       --critical:       #e66767;
       --shadow:         none;
     }
@@ -54,12 +62,38 @@
     --baseline:       #383835;
     --border:         rgba(255,255,255,0.10);
     --series-a:       #3987e5;
-    --series-b:       #008300;
-    --accent:         #3987e5;
-    --accent-soft:    #184f95;
-    --good:           #0ca30c;
+    --series-b:       #d55181;
+    --accent:         #34c795;
+    --accent-soft:    #123d2f;
+    --accent-ink:     #08211a;
+    --accent-2:       #f0c860;
+    --accent-2-soft:  #4a3712;
+    --accent-2-ink:   #2b2205;
+    --good:           #34c795;
     --critical:       #e66767;
     --shadow:         none;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface:        #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-a:       #2a78d6;
+    --series-b:       #e87ba4;
+    --accent:         #12805f;
+    --accent-soft:    #d7f0e6;
+    --accent-ink:     #ffffff;
+    --accent-2:       #e8b93e;
+    --accent-2-soft:  #fbefc8;
+    --accent-2-ink:   #2b2205;
+    --good:           #12805f;
+    --critical:       #d03b3b;
+    --shadow:         0 1px 3px rgba(11,11,11,0.06);
   }
 
   * { box-sizing: border-box; }
@@ -135,7 +169,7 @@
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
   textarea { width: 100%; resize: vertical; }
   button.primary {
-    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 8px;
     padding: 8px 16px; font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 600;
   }
   button.primary:hover { filter: brightness(1.08); }
@@ -165,8 +199,7 @@
     background: var(--page); border: 1px solid var(--border); color: var(--text-secondary);
     white-space: nowrap;
   }
-  .badge.soon { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  .badge.today { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .badge.solo { background: var(--accent-2); border-color: var(--accent-2); color: var(--accent-2-ink); font-weight: 600; }
 
   .who-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .who-a { background: var(--series-a); }
@@ -211,6 +244,11 @@
   .project-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; background: var(--page); }
   .project-card h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
   .project-card .p-notes { color: var(--text-muted); font-size: 13px; margin: 4px 0 6px; }
+  details.archive { margin-top: 10px; }
+  details.archive summary { cursor: pointer; color: var(--text-muted); font-size: 13px; list-style: none; }
+  details.archive summary:hover { color: var(--text-primary); }
+  details.archive summary::-webkit-details-marker { display: none; }
+  details.archive ul { margin-top: 6px; }
 
   .cal-frame { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 10px; }
   details.help { font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
@@ -318,6 +356,10 @@
         </select>
         <button class="primary" type="submit">Eintragen</button>
       </form>
+      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
+        <input type="checkbox" id="expSolo">
+        Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
+      </label>
     </div>
 
     <div class="card">
@@ -343,7 +385,7 @@
         <div class="tile">
           <div class="label">Ausgleich</div>
           <div class="value" id="costSaldo" style="font-size:17px;">–</div>
-          <div class="sub">damit es fair (50/50) ist</div>
+          <div class="sub" id="costSaldoSub">damit es fair (50/50) ist</div>
         </div>
       </div>
 
@@ -407,12 +449,12 @@
   <!-- GESCHENKE -->
   <section class="tab" id="tab-gifts">
     <div class="card">
-      <h2>🎁 Geschenkideen</h2>
-      <p class="hint">Sammelt Ideen füreinander. Mit dem Auge 👁 könnt ihr eine Liste verstecken, damit die Überraschung geheim bleibt, wenn ihr zusammen vor dem Bildschirm sitzt.</p>
+      <h2>🎁 Eure Wunschliste</h2>
+      <p class="hint">Was ihr euch wünscht – als Inspiration für den anderen. Mit dem Auge 👁 könnt ihr eure eigene Liste verstecken, damit die Überraschung geheim bleibt, wenn ihr zusammen vor dem Bildschirm sitzt.</p>
       <div class="two-col">
         <div>
           <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
-            <span id="giftHeadA">Ideen für …</span>
+            <span id="giftHeadA">Wunschliste …</span>
             <button class="ghost" id="giftToggleA">👁 Verstecken</button>
           </h3>
           <form class="row" id="giftFormA">
@@ -423,7 +465,7 @@
         </div>
         <div>
           <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
-            <span id="giftHeadB">Ideen für …</span>
+            <span id="giftHeadB">Wunschliste …</span>
             <button class="ghost" id="giftToggleB">👁 Verstecken</button>
           </h3>
           <form class="row" id="giftFormB">
@@ -433,6 +475,17 @@
           <ul class="plain" id="giftListB"></ul>
         </div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>🎉 Geschenkideen für andere</h2>
+      <p class="hint">Für Freunde, Familie, Hochzeiten & Co. – damit ihr nie ohne Idee dasteht.</p>
+      <form class="row" id="giftFormOthers">
+        <input type="text" id="giftInputOthersWho" placeholder="Für wen? z. B. „Hochzeit Lisa & Tom“" style="flex:1; min-width:160px;" required>
+        <input type="text" id="giftInputOthersIdea" placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;" required>
+        <button class="primary" type="submit">+</button>
+      </form>
+      <ul class="plain" id="giftListOthers"></ul>
     </div>
   </section>
 
@@ -498,9 +551,9 @@ const defaultState = () => ({
   settings: { nameA: "Kolja", nameB: "Carina", calendarUrl: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
-  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category}
+  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
   todos: [],       // {id, text, who:'A'|'B'|'both', done}
-  gifts: { A: [], B: [], hiddenA: false, hiddenB: false }, // Ideen FÜR Person A / B
+  gifts: { A: [], B: [], others: [], hiddenA: false, hiddenB: false }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
 });
 
@@ -550,10 +603,10 @@ document.getElementById("themeToggle").addEventListener("click", () => {
 
 /* ---------- Übersicht ---------- */
 function renderOverview() {
-  const { total, totalA } = monthTotals(currentMonth);
+  const { total, sharedTotal, sharedTotalA } = monthTotals(currentMonth);
   document.getElementById("ovMonthTotal").textContent = eur.format(total);
   document.getElementById("ovMonthName").textContent = monthName(currentMonth);
-  document.getElementById("ovSaldo").innerHTML = saldoText(total, totalA);
+  document.getElementById("ovSaldo").innerHTML = saldoText(sharedTotal, sharedTotalA);
 
   const open = state.todos.filter(t => !t.done).length;
   document.getElementById("ovTodos").textContent = open;
@@ -636,7 +689,11 @@ function monthTotals(ym) {
   const list = monthExpenses(ym);
   const total  = list.reduce((s, e) => s + e.amount, 0);
   const totalA = list.filter(e => e.payer === "A").reduce((s, e) => s + e.amount, 0);
-  return { total, totalA, totalB: total - totalA };
+  const shared = list.filter(e => e.shared !== false);
+  const sharedTotal  = shared.reduce((s, e) => s + e.amount, 0);
+  const sharedTotalA = shared.filter(e => e.payer === "A").reduce((s, e) => s + e.amount, 0);
+  const soloCount = list.length - shared.length;
+  return { total, totalA, totalB: total - totalA, sharedTotal, sharedTotalA, soloCount };
 }
 function saldoText(total, totalA) {
   const diff = totalA - total / 2; // >0: A hat mehr bezahlt
@@ -659,23 +716,28 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
     desc: document.getElementById("expDesc").value.trim(),
     amount,
     payer: document.getElementById("expPayer").value,
-    category: document.getElementById("expCategory").value
+    category: document.getElementById("expCategory").value,
+    shared: !document.getElementById("expSolo").checked
   });
   document.getElementById("expDesc").value = "";
   document.getElementById("expAmount").value = "";
+  document.getElementById("expSolo").checked = false;
   currentMonth = document.getElementById("expDate").value;
   save(); renderAll();
 });
 
 function renderCosts() {
   document.getElementById("monthLabel").textContent = monthName(currentMonth);
-  const { total, totalA, totalB } = monthTotals(currentMonth);
+  const { total, totalA, totalB, sharedTotal, sharedTotalA, soloCount } = monthTotals(currentMonth);
   document.getElementById("costTotal").textContent = eur.format(total);
   document.getElementById("costLabelA").textContent = state.settings.nameA + " hat bezahlt";
   document.getElementById("costLabelB").textContent = state.settings.nameB + " hat bezahlt";
   document.getElementById("costTotalA").textContent = eur.format(totalA);
   document.getElementById("costTotalB").textContent = eur.format(totalB);
-  document.getElementById("costSaldo").innerHTML = saldoText(total, totalA);
+  document.getElementById("costSaldo").innerHTML = saldoText(sharedTotal, sharedTotalA);
+  document.getElementById("costSaldoSub").textContent = soloCount
+    ? `bei 50/50 – ${soloCount} Ausgabe${soloCount > 1 ? "n" : ""} nicht geteilt`
+    : "damit es fair (50/50) ist";
 
   // Legende
   const css = getComputedStyle(document.documentElement);
@@ -696,7 +758,7 @@ function renderExpenseTable() {
     <tr>
       <td>${esc(e.desc)}</td>
       <td><span class="badge">${esc(e.category)}</span></td>
-      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}</span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${e.shared === false ? ` <span class="badge solo">100%</span>` : ""}</span></td>
       <td class="num">${eur.format(e.amount)}</td>
       <td><button class="icon" data-del-exp="${e.id}" title="Löschen">✕</button></td>
     </tr>`).join("");
@@ -863,7 +925,7 @@ function bindGiftForm(person) {
 bindGiftForm("A"); bindGiftForm("B");
 function renderGifts() {
   for (const person of ["A", "B"]) {
-    document.getElementById("giftHead" + person).textContent = "Ideen für " + nameOf(person);
+    document.getElementById("giftHead" + person).textContent = "Wunschliste " + nameOf(person);
     const hidden = state.gifts["hidden" + person];
     document.getElementById("giftToggle" + person).textContent = hidden ? "🙈 Anzeigen" : "👁 Verstecken";
     const ul = document.getElementById("giftList" + person);
@@ -875,6 +937,29 @@ function renderGifts() {
         <button class="icon" data-del-gift="${g.id}" title="Löschen">✕</button>
       </li>`).join("") || `<div class="empty">Noch keine Ideen.</div>`;
   }
+}
+
+document.getElementById("giftFormOthers").addEventListener("submit", e => {
+  e.preventDefault();
+  const who = document.getElementById("giftInputOthersWho");
+  const idea = document.getElementById("giftInputOthersIdea");
+  state.gifts.others.push({ id: uid(), who: who.value.trim(), text: idea.value.trim(), done: false });
+  who.value = ""; idea.value = ""; save(); renderAll();
+});
+document.getElementById("giftListOthers").addEventListener("click", e => {
+  const cb = e.target.closest("input[data-gift-other]");
+  if (cb) { const g = state.gifts.others.find(x => x.id === cb.dataset.giftOther); g.done = cb.checked; save(); renderAll(); return; }
+  const del = e.target.closest("[data-del-gift-other]");
+  if (del) { state.gifts.others = state.gifts.others.filter(x => x.id !== del.dataset.delGiftOther); save(); renderAll(); }
+});
+function renderGiftsOthers() {
+  const ul = document.getElementById("giftListOthers");
+  ul.innerHTML = state.gifts.others.map(g => `
+    <li class="${g.done ? "done" : ""}">
+      <input type="checkbox" ${g.done ? "checked" : ""} data-gift-other="${g.id}" title="Schon besorgt?">
+      <span class="grow"><b>${esc(g.who)}</b> — ${esc(g.text)}</span>
+      <button class="icon" data-del-gift-other="${g.id}" title="Löschen">✕</button>
+    </li>`).join("") || `<div class="empty">Noch keine Ideen für andere gesammelt.</div>`;
 }
 
 /* ---------- Projekte ---------- */
@@ -893,22 +978,29 @@ document.getElementById("projectForm").addEventListener("submit", e => {
 function renderProjects() {
   const el = document.getElementById("projectList");
   el.innerHTML = state.projects.map(p => {
-    const done = p.items.filter(i => i.done).length;
-    const pct = p.items.length ? Math.round(done / p.items.length * 100) : 0;
-    return `
-    <div class="project-card">
-      <h3>${esc(p.name)} <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button></h3>
-      ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
-      <div style="font-size:12px; color:var(--text-muted);">${done} von ${p.items.length} Schritten erledigt${p.items.length ? " · " + pct + " %" : ""}</div>
-      <div class="meter"><div style="width:${pct}%"></div></div>
-      <ul class="plain" style="margin-top:8px;">
-        ${p.items.map(i => `
+    const open = p.items.filter(i => !i.done);
+    const done = p.items.filter(i => i.done);
+    const pct = p.items.length ? Math.round(done.length / p.items.length * 100) : 0;
+    const itemRow = i => `
           <li class="${i.done ? "done" : ""}">
             <input type="checkbox" ${i.done ? "checked" : ""} data-pitem="${p.id}:${i.id}">
             <span class="grow">${esc(i.text)}</span>
             <button class="icon" data-del-pitem="${p.id}:${i.id}" title="Löschen">✕</button>
-          </li>`).join("")}
+          </li>`;
+    return `
+    <div class="project-card">
+      <h3>${esc(p.name)} <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button></h3>
+      ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
+      <div style="font-size:12px; color:var(--text-muted);">${done.length} von ${p.items.length} Schritten erledigt${p.items.length ? " · " + pct + " %" : ""}</div>
+      <div class="meter"><div style="width:${pct}%"></div></div>
+      <ul class="plain" style="margin-top:8px;">
+        ${open.length ? open.map(itemRow).join("") : `<div class="empty">Alle Schritte erledigt! 🎉</div>`}
       </ul>
+      ${done.length ? `
+      <details class="archive">
+        <summary>✔ ${done.length} erledigt${done.length > 1 ? "e" : ""} Schritt${done.length > 1 ? "e" : ""} anzeigen</summary>
+        <ul class="plain">${done.map(itemRow).join("")}</ul>
+      </details>` : ""}
       <form class="row" data-pform="${p.id}" style="margin-top:8px; margin-bottom:0;">
         <input type="text" placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;" required>
         <button class="primary" type="submit">+</button>
@@ -1001,7 +1093,8 @@ document.getElementById("demoBtn").addEventListener("click", () => {
     { id: uid(), date: m, desc: "Wocheneinkauf", amount: 87.40, payer: "A", category: "Lebensmittel" },
     { id: uid(), date: m, desc: "Kinoabend", amount: 32.00, payer: "B", category: "Freizeit" },
     { id: uid(), date: m, desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
-    { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" });
+    { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" },
+    { id: uid(), date: m, desc: "Neues Fahrrad (nur für mich)", amount: 210.00, payer: "A", category: "Sonstiges", shared: false });
   state.todos.push(
     { id: uid(), text: "Wocheneinkauf erledigen", who: "A", done: false },
     { id: uid(), text: "Bad putzen", who: "B", done: false },
@@ -1035,6 +1128,7 @@ function renderAll() {
   renderCalendar();
   renderTodos();
   renderGifts();
+  renderGiftsOthers();
   renderProjects();
 }
 
