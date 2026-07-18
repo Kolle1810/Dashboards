@@ -7,14 +7,14 @@
 <style>
   :root {
     color-scheme: light;
-    --page:           #f9f9f7;
-    --surface:        #fcfcfb;
+    --page:           #eaf6f0;
+    --surface:        #fbfdfb;
     --text-primary:   #0b0b0b;
     --text-secondary: #52514e;
     --text-muted:     #898781;
-    --grid:           #e1e0d9;
-    --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
+    --grid:           #d9ede2;
+    --baseline:       #aed7c2;
+    --border:         rgba(18,128,95,0.18);
     --series-a:       #2a78d6;   /* Kolja – Blau */
     --series-b:       #e87ba4;   /* Carina – Rosa */
     --accent:         #12805f;   /* Mintgrün */
@@ -30,14 +30,14 @@
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page:           #0d0d0d;
-      --surface:        #1a1a19;
+      --page:           #0a1512;
+      --surface:        #15211c;
       --text-primary:   #ffffff;
       --text-secondary: #c3c2b7;
       --text-muted:     #898781;
-      --grid:           #2c2c2a;
-      --baseline:       #383835;
-      --border:         rgba(255,255,255,0.10);
+      --grid:           #223129;
+      --baseline:       #35493e;
+      --border:         rgba(52,199,149,0.20);
       --series-a:       #3987e5;
       --series-b:       #d55181;
       --accent:         #34c795;
@@ -53,14 +53,14 @@
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page:           #0d0d0d;
-    --surface:        #1a1a19;
+    --page:           #0a1512;
+    --surface:        #15211c;
     --text-primary:   #ffffff;
     --text-secondary: #c3c2b7;
     --text-muted:     #898781;
-    --grid:           #2c2c2a;
-    --baseline:       #383835;
-    --border:         rgba(255,255,255,0.10);
+    --grid:           #223129;
+    --baseline:       #35493e;
+    --border:         rgba(52,199,149,0.20);
     --series-a:       #3987e5;
     --series-b:       #d55181;
     --accent:         #34c795;
@@ -75,14 +75,14 @@
   }
   :root[data-theme="light"] {
     color-scheme: light;
-    --page:           #f9f9f7;
-    --surface:        #fcfcfb;
+    --page:           #eaf6f0;
+    --surface:        #fbfdfb;
     --text-primary:   #0b0b0b;
     --text-secondary: #52514e;
     --text-muted:     #898781;
-    --grid:           #e1e0d9;
-    --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
+    --grid:           #d9ede2;
+    --baseline:       #aed7c2;
+    --border:         rgba(18,128,95,0.18);
     --series-a:       #2a78d6;
     --series-b:       #e87ba4;
     --accent:         #12805f;
@@ -107,9 +107,8 @@
   }
 
   header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px 0;
+    background: var(--accent);
+    padding: 14px 20px 12px;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -121,30 +120,31 @@
     max-width: 1000px;
     margin: 0 auto;
   }
-  .app-title { font-size: 20px; font-weight: 700; margin: 0; }
-  .app-title small { font-weight: 400; color: var(--text-muted); font-size: 13px; margin-left: 8px; }
+  .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--accent-ink); }
+  .app-title small { font-weight: 400; color: var(--accent-ink); opacity: 0.75; font-size: 13px; margin-left: 8px; }
   #themeToggle {
-    background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 10px; cursor: pointer; color: var(--text-secondary); font-size: 14px;
+    background: none; border: 1px solid color-mix(in srgb, var(--accent-ink) 35%, transparent); border-radius: 8px;
+    padding: 5px 10px; cursor: pointer; color: var(--accent-ink); font-size: 14px; opacity: 0.9;
   }
+  #themeToggle:hover { opacity: 1; }
   nav {
-    display: flex; gap: 2px; max-width: 1000px; margin: 10px auto 0;
+    display: flex; gap: 4px; max-width: 1000px; margin: 12px auto 0;
     overflow-x: auto;
   }
   nav button {
-    background: none; border: none; padding: 9px 13px; cursor: pointer;
-    font-size: 14px; color: var(--text-secondary); white-space: nowrap;
-    border-bottom: 2px solid transparent; font-family: inherit;
+    background: none; border: none; padding: 8px 13px; cursor: pointer;
+    font-size: 14px; color: var(--accent-ink); opacity: 0.72; white-space: nowrap;
+    border-radius: 999px; font-family: inherit;
   }
-  nav button.active { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
-  nav button:hover { color: var(--text-primary); }
+  nav button.active { background: var(--accent-2); color: var(--accent-2-ink); font-weight: 600; opacity: 1; }
+  nav button:hover { opacity: 1; }
 
   main { max-width: 1000px; margin: 0 auto; padding: 20px; }
   .tab { display: none; }
   .tab.active { display: block; }
 
   .card {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent);
     border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow);
   }
   .card h2 { margin: 0 0 4px; font-size: 17px; }
@@ -152,9 +152,10 @@
 
   .tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
   .tile {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent);
     border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
   }
+  .tile.hero { border-top-color: var(--accent-2); }
   .tile .label { font-size: 13px; color: var(--text-secondary); }
   .tile .value { font-size: 30px; font-weight: 600; margin-top: 2px; }
   .tile .sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
@@ -174,10 +175,10 @@
   }
   button.primary:hover { filter: brightness(1.08); }
   button.ghost {
-    background: none; border: 1px solid var(--border); color: var(--text-secondary);
+    background: none; border: 1px solid var(--accent); color: var(--accent);
     border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; font-family: inherit;
   }
-  button.ghost:hover { color: var(--text-primary); }
+  button.ghost:hover { background: var(--accent-soft); }
   button.icon {
     background: none; border: none; cursor: pointer; color: var(--text-muted);
     font-size: 15px; padding: 2px 6px; border-radius: 6px;
@@ -533,7 +534,7 @@
           ⬆️ Daten importieren<input type="file" id="importFile" accept=".json" style="display:none;">
         </label>
         <button class="ghost" id="demoBtn">✨ Beispieldaten laden</button>
-        <button class="ghost" id="resetBtn" style="color:var(--critical);">🗑 Alles zurücksetzen</button>
+        <button class="ghost" id="resetBtn" style="color:var(--critical); border-color:var(--critical);">🗑 Alles zurücksetzen</button>
       </div>
     </div>
   </section>
@@ -991,10 +992,15 @@ function renderProjects() {
     <div class="project-card">
       <h3>${esc(p.name)} <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button></h3>
       ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
-      <div style="font-size:12px; color:var(--text-muted);">${done.length} von ${p.items.length} Schritten erledigt${p.items.length ? " · " + pct + " %" : ""}</div>
-      <div class="meter"><div style="width:${pct}%"></div></div>
+      ${p.items.length ? `
+      <div style="font-size:12px; color:var(--text-muted);">${done.length} von ${p.items.length} Schritten erledigt · ${pct} %</div>
+      <div class="meter"><div style="width:${pct}%"></div></div>` : ""}
       <ul class="plain" style="margin-top:8px;">
-        ${open.length ? open.map(itemRow).join("") : `<div class="empty">Alle Schritte erledigt! 🎉</div>`}
+        ${p.items.length === 0
+          ? `<div class="empty">Noch keine Schritte – fügt unten den ersten hinzu.</div>`
+          : open.length
+            ? open.map(itemRow).join("")
+            : `<div class="empty">Alle Schritte erledigt! 🎉</div>`}
       </ul>
       ${done.length ? `
       <details class="archive">
