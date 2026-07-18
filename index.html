@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unser Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface:        #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-a:       #2a78d6;   /* Person A – Blau */
+    --series-b:       #008300;   /* Person B – Grün */
+    --accent:         #2a78d6;
+    --accent-soft:    #cde2fb;
+    --good:           #006300;
+    --critical:       #d03b3b;
+    --shadow:         0 1px 3px rgba(11,11,11,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface:        #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-a:       #3987e5;
+      --series-b:       #008300;
+      --accent:         #3987e5;
+      --accent-soft:    #184f95;
+      --good:           #0ca30c;
+      --critical:       #e66767;
+      --shadow:         none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface:        #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-a:       #3987e5;
+    --series-b:       #008300;
+    --accent:         #3987e5;
+    --accent-soft:    #184f95;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --shadow:         none;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .app-title { font-size: 20px; font-weight: 700; margin: 0; }
+  .app-title small { font-weight: 400; color: var(--text-muted); font-size: 13px; margin-left: 8px; }
+  #themeToggle {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 10px; cursor: pointer; color: var(--text-secondary); font-size: 14px;
+  }
+  nav {
+    display: flex; gap: 2px; max-width: 1000px; margin: 10px auto 0;
+    overflow-x: auto;
+  }
+  nav button {
+    background: none; border: none; padding: 9px 13px; cursor: pointer;
+    font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+    border-bottom: 2px solid transparent; font-family: inherit;
+  }
+  nav button.active { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
+  nav button:hover { color: var(--text-primary); }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .card h2 { margin: 0 0 4px; font-size: 17px; }
+  .card .hint { color: var(--text-muted); font-size: 13px; margin: 0 0 12px; }
+
+  .tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+  }
+  .tile .label { font-size: 13px; color: var(--text-secondary); }
+  .tile .value { font-size: 30px; font-weight: 600; margin-top: 2px; }
+  .tile .sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .tile.hero .value { font-size: 40px; }
+
+  form.row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  input, select, textarea {
+    background: var(--page); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  textarea { width: 100%; resize: vertical; }
+  button.primary {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 600;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost {
+    background: none; border: 1px solid var(--border); color: var(--text-secondary);
+    border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  button.ghost:hover { color: var(--text-primary); }
+  button.icon {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    font-size: 15px; padding: 2px 6px; border-radius: 6px;
+  }
+  button.icon:hover { color: var(--critical); background: var(--page); }
+
+  ul.plain { list-style: none; margin: 0; padding: 0; }
+  ul.plain li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 4px; border-bottom: 1px solid var(--grid);
+  }
+  ul.plain li:last-child { border-bottom: none; }
+  ul.plain li .grow { flex: 1; }
+  ul.plain li.done .grow { text-decoration: line-through; color: var(--text-muted); }
+  .empty { color: var(--text-muted); font-size: 14px; padding: 10px 4px; font-style: italic; }
+
+  .badge {
+    display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 999px;
+    background: var(--page); border: 1px solid var(--border); color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .badge.soon { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .badge.today { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .who-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .who-a { background: var(--series-a); }
+  .who-b { background: var(--series-b); }
+  .who-both { background: linear-gradient(90deg, var(--series-a) 50%, var(--series-b) 50%); }
+
+  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .legend .key { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  .chart-wrap { position: relative; }
+  #chartTooltip {
+    position: absolute; pointer-events: none; display: none;
+    background: var(--text-primary); color: var(--page);
+    font-size: 12px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; z-index: 5;
+  }
+
+  .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .month-nav .month-label { font-weight: 600; min-width: 150px; text-align: center; }
+
+  table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.data th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--baseline); }
+  table.data td { padding: 8px; border-bottom: 1px solid var(--grid); }
+  table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data th.num { text-align: right; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  .blurred { filter: blur(7px); user-select: none; pointer-events: none; }
+
+  .meter { height: 8px; border-radius: 4px; background: var(--accent-soft); overflow: hidden; margin-top: 8px; }
+  .meter > div { height: 100%; background: var(--accent); border-radius: 4px; }
+
+  details.protocol { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: var(--page); }
+  details.protocol summary { cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; list-style: none; }
+  details.protocol summary::before { content: "▸"; color: var(--text-muted); }
+  details.protocol[open] summary::before { content: "▾"; }
+  details.protocol .p-date { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+  details.protocol .p-body { white-space: pre-wrap; padding: 10px 0 4px; color: var(--text-secondary); }
+
+  .project-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; background: var(--page); }
+  .project-card h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .project-card .p-notes { color: var(--text-muted); font-size: 13px; margin: 4px 0 6px; }
+
+  .cal-frame { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 10px; }
+  details.help { font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
+  details.help summary { cursor: pointer; color: var(--accent); }
+  details.help ol { padding-left: 20px; }
+
+  .saldo-good { color: var(--good); font-weight: 600; }
+  .footer-note { text-align: center; color: var(--text-muted); font-size: 12px; padding: 10px 0 30px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <h1 class="app-title">💑 Unser Dashboard <small id="headerNames"></small></h1>
+    <button id="themeToggle" title="Hell/Dunkel umschalten">🌓</button>
+  </div>
+  <nav id="mainNav">
+    <button data-tab="overview" class="active">Übersicht</button>
+    <button data-tab="meetings">Meetings</button>
+    <button data-tab="costs">Kosten</button>
+    <button data-tab="calendar">Kalender</button>
+    <button data-tab="todos">To-dos</button>
+    <button data-tab="gifts">Geschenke</button>
+    <button data-tab="projects">Projekte</button>
+    <button data-tab="settings">⚙️ Einstellungen</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ÜBERSICHT -->
+  <section class="tab active" id="tab-overview">
+    <div class="tile-grid">
+      <div class="tile hero">
+        <div class="label">Ausgaben diesen Monat</div>
+        <div class="value" id="ovMonthTotal">–</div>
+        <div class="sub" id="ovMonthName"></div>
+      </div>
+      <div class="tile">
+        <div class="label">Kontostand zwischen euch</div>
+        <div class="value" id="ovSaldo" style="font-size:22px;">–</div>
+        <div class="sub">bei 50/50-Aufteilung</div>
+      </div>
+      <div class="tile">
+        <div class="label">Offene To-dos diese Woche</div>
+        <div class="value" id="ovTodos">–</div>
+        <div class="sub" id="ovTodosSub"></div>
+      </div>
+      <div class="tile">
+        <div class="label">Nächster Termin</div>
+        <div class="value" id="ovNextEvent" style="font-size:19px;">–</div>
+        <div class="sub" id="ovNextEventSub"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>📝 Themen fürs nächste Meeting</h2>
+        <p class="hint">Was ihr beim nächsten Paar-Meeting besprechen wollt.</p>
+        <ul class="plain" id="ovTopics"></ul>
+      </div>
+      <div class="card">
+        <h2>📅 Bevorstehende Termine</h2>
+        <p class="hint">Die nächsten Ereignisse aus eurer Terminliste.</p>
+        <ul class="plain" id="ovEvents"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEETINGS -->
+  <section class="tab" id="tab-meetings">
+    <div class="card">
+      <h2>Themenliste fürs nächste Meeting</h2>
+      <p class="hint">Sammelt hier alles, was ihr besprechen wollt. Beim Meeting hakt ihr die Punkte einfach ab.</p>
+      <form class="row" id="topicForm">
+        <input type="text" id="topicInput" placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;" required>
+        <button class="primary" type="submit">Hinzufügen</button>
+      </form>
+      <ul class="plain" id="topicList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Meeting-Protokolle</h2>
+      <p class="hint">Haltet fest, was ihr besprochen und entschieden habt – so geht nichts verloren.</p>
+      <form id="protocolForm">
+        <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <input type="date" id="protocolDate" required>
+          <input type="text" id="protocolTitle" placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;" required>
+        </div>
+        <textarea id="protocolNotes" rows="4" placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></textarea>
+        <div style="margin-top:8px;">
+          <button class="primary" type="submit">Protokoll speichern</button>
+        </div>
+      </form>
+      <div id="protocolList" style="margin-top:16px;"></div>
+    </div>
+  </section>
+
+  <!-- KOSTEN -->
+  <section class="tab" id="tab-costs">
+    <div class="card">
+      <h2>Ausgabe eintragen</h2>
+      <p class="hint">Tragt ein, wer was bezahlt hat. Das Dashboard rechnet automatisch aus, wer wem etwas schuldet (50/50).</p>
+      <form class="row" id="expenseForm">
+        <input type="date" id="expDate" required>
+        <input type="text" id="expDesc" placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;" required>
+        <input type="text" id="expAmount" placeholder="Betrag in €" style="width:110px;" required inputmode="decimal">
+        <select id="expPayer"></select>
+        <select id="expCategory">
+          <option>Lebensmittel</option>
+          <option>Wohnen</option>
+          <option>Freizeit</option>
+          <option>Restaurant</option>
+          <option>Reisen</option>
+          <option>Sonstiges</option>
+        </select>
+        <button class="primary" type="submit">Eintragen</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="month-nav">
+        <button class="ghost" id="monthPrev">‹</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="ghost" id="monthNext">›</button>
+      </div>
+
+      <div class="tile-grid">
+        <div class="tile">
+          <div class="label">Gesamt im Monat</div>
+          <div class="value" id="costTotal" style="font-size:26px;">–</div>
+        </div>
+        <div class="tile">
+          <div class="label" id="costLabelA">…</div>
+          <div class="value" id="costTotalA" style="font-size:26px;">–</div>
+        </div>
+        <div class="tile">
+          <div class="label" id="costLabelB">…</div>
+          <div class="value" id="costTotalB" style="font-size:26px;">–</div>
+        </div>
+        <div class="tile">
+          <div class="label">Ausgleich</div>
+          <div class="value" id="costSaldo" style="font-size:17px;">–</div>
+          <div class="sub">damit es fair (50/50) ist</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:6px;">Ausgaben nach Kategorie</h2>
+      <div class="legend" id="chartLegend"></div>
+      <div class="chart-wrap">
+        <svg id="costChart" width="100%" height="260" role="img" aria-label="Balkendiagramm der Ausgaben nach Kategorie"></svg>
+        <div id="chartTooltip"></div>
+      </div>
+
+      <h2 style="margin-top:18px;">Alle Einträge des Monats</h2>
+      <table class="data" id="expenseTableWrap">
+        <thead>
+          <tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Bezahlt von</th><th class="num">Betrag</th><th></th></tr>
+        </thead>
+        <tbody id="expenseTable"></tbody>
+      </table>
+      <div class="empty" id="expenseEmpty" style="display:none;">Noch keine Ausgaben in diesem Monat. Trag oben die erste ein!</div>
+    </div>
+  </section>
+
+  <!-- KALENDER -->
+  <section class="tab" id="tab-calendar">
+    <div class="card">
+      <h2>Eure Termine &amp; Countdowns</h2>
+      <p class="hint">Wichtige Daten wie Jahrestag, Urlaub oder Konzerte – mit automatischem Countdown.</p>
+      <form class="row" id="eventForm">
+        <input type="date" id="eventDate" required>
+        <input type="text" id="eventTitle" placeholder="Was steht an? z. B. „Jahrestag“" style="flex:1; min-width:200px;" required>
+        <button class="primary" type="submit">Hinzufügen</button>
+      </form>
+      <ul class="plain" id="eventList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Google Kalender</h2>
+      <p class="hint">Hier könnt ihr euren gemeinsamen Google-Kalender direkt anzeigen lassen.</p>
+      <div id="calendarContainer">
+        <div class="empty">Noch kein Kalender verbunden. So geht's: 👇</div>
+      </div>
+      <details class="help">
+        <summary>Anleitung: Google Kalender einbinden (Schritt für Schritt)</summary>
+        <ol>
+          <li>Öffne <b>calendar.google.com</b> am Computer.</li>
+          <li>Links bei „Meine Kalender“: fahre mit der Maus über euren gemeinsamen Kalender → klicke auf die drei Punkte → <b>„Einstellungen und Freigabe“</b>.</li>
+          <li>Scrolle zu <b>„Kalender integrieren“</b>.</li>
+          <li>Kopiere die Adresse unter <b>„Öffentliche URL für diesen Kalender“</b> bzw. den Link aus dem <b>„Einbettungscode“</b> (die Adresse, die mit <code>https://calendar.google.com/calendar/embed?...</code> beginnt).</li>
+          <li>Füge diese Adresse hier im Dashboard unter <b>⚙️ Einstellungen → Google-Kalender-Adresse</b> ein und speichere.</li>
+        </ol>
+        <p><b>Hinweis:</b> Damit der Kalender hier angezeigt werden kann, muss er in den Google-Einstellungen freigegeben („öffentlich“) sein – oder ihr seid im selben Browser bei Google angemeldet. Eure Countdown-Liste oben funktioniert immer, ganz ohne Google.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- TO-DOS -->
+  <section class="tab" id="tab-todos">
+    <div class="card">
+      <h2>To-dos der Woche</h2>
+      <p class="hint">Wer macht was? Einfach eintragen, zuweisen und abhaken.</p>
+      <form class="row" id="todoForm">
+        <input type="text" id="todoInput" placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;" required>
+        <select id="todoWho"></select>
+        <button class="primary" type="submit">Hinzufügen</button>
+      </form>
+      <ul class="plain" id="todoList"></ul>
+      <div style="margin-top:12px;">
+        <button class="ghost" id="clearDoneTodos">✔ Erledigte aufräumen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GESCHENKE -->
+  <section class="tab" id="tab-gifts">
+    <div class="card">
+      <h2>🎁 Geschenkideen</h2>
+      <p class="hint">Sammelt Ideen füreinander. Mit dem Auge 👁 könnt ihr eine Liste verstecken, damit die Überraschung geheim bleibt, wenn ihr zusammen vor dem Bildschirm sitzt.</p>
+      <div class="two-col">
+        <div>
+          <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
+            <span id="giftHeadA">Ideen für …</span>
+            <button class="ghost" id="giftToggleA">👁 Verstecken</button>
+          </h3>
+          <form class="row" id="giftFormA">
+            <input type="text" id="giftInputA" placeholder="Neue Idee…" style="flex:1;" required>
+            <button class="primary" type="submit">+</button>
+          </form>
+          <ul class="plain" id="giftListA"></ul>
+        </div>
+        <div>
+          <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
+            <span id="giftHeadB">Ideen für …</span>
+            <button class="ghost" id="giftToggleB">👁 Verstecken</button>
+          </h3>
+          <form class="row" id="giftFormB">
+            <input type="text" id="giftInputB" placeholder="Neue Idee…" style="flex:1;" required>
+            <button class="primary" type="submit">+</button>
+          </form>
+          <ul class="plain" id="giftListB"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJEKTE -->
+  <section class="tab" id="tab-projects">
+    <div class="card">
+      <h2>Gemeinsame Projekte</h2>
+      <p class="hint">Größere Vorhaben wie Urlaub, Umzug oder Haus – jedes Projekt bekommt eine eigene Checkliste mit Fortschrittsanzeige.</p>
+      <form class="row" id="projectForm">
+        <input type="text" id="projectName" placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;" required>
+        <input type="text" id="projectNotes" placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;">
+        <button class="primary" type="submit">Projekt anlegen</button>
+      </form>
+      <div id="projectList"></div>
+    </div>
+  </section>
+
+  <!-- EINSTELLUNGEN -->
+  <section class="tab" id="tab-settings">
+    <div class="card">
+      <h2>Eure Namen</h2>
+      <p class="hint">Die Namen erscheinen überall im Dashboard – z. B. bei Ausgaben, To-dos und Geschenken.</p>
+      <form class="row" id="namesForm">
+        <input type="text" id="nameA" placeholder="Name Person 1" required>
+        <input type="text" id="nameB" placeholder="Name Person 2" required>
+        <button class="primary" type="submit">Speichern</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Google-Kalender-Adresse</h2>
+      <p class="hint">Füge hier die Einbettungs-Adresse eures Google-Kalenders ein (Anleitung im Tab „Kalender“).</p>
+      <form class="row" id="calForm">
+        <input type="url" id="calUrl" placeholder="https://calendar.google.com/calendar/embed?src=…" style="flex:1; min-width:260px;">
+        <button class="primary" type="submit">Speichern</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Daten sichern &amp; teilen</h2>
+      <p class="hint">Eure Daten werden nur in diesem Browser gespeichert. Mit „Exportieren“ ladet ihr eine Sicherungsdatei herunter – die könnt ihr euch gegenseitig schicken (z. B. per Messenger) und beim anderen mit „Importieren“ einlesen. So bleibt ihr auf dem gleichen Stand.</p>
+      <div class="row" style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="ghost" id="exportBtn">⬇️ Daten exportieren</button>
+        <label class="ghost" style="display:inline-block; cursor:pointer;">
+          ⬆️ Daten importieren<input type="file" id="importFile" accept=".json" style="display:none;">
+        </label>
+        <button class="ghost" id="demoBtn">✨ Beispieldaten laden</button>
+        <button class="ghost" id="resetBtn" style="color:var(--critical);">🗑 Alles zurücksetzen</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+<div class="footer-note">Unser Dashboard · Alle Daten bleiben privat in eurem Browser</div>
+
+<script>
+"use strict";
+
+/* ---------- Datenhaltung ---------- */
+const STORE_KEY = "paarDashboard.v1";
+
+const defaultState = () => ({
+  settings: { nameA: "Kolja", nameB: "Partnerin", calendarUrl: "" },
+  topics: [],      // {id, text, done}
+  protocols: [],   // {id, date, title, notes}
+  expenses: [],    // {id, date, desc, amount, payer:'A'|'B', category}
+  events: [],      // {id, date, title}
+  todos: [],       // {id, text, who:'A'|'B'|'both', done}
+  gifts: { A: [], B: [], hiddenA: false, hiddenB: false }, // Ideen FÜR Person A / B
+  projects: []     // {id, name, notes, items:[{id,text,done}]}
+});
+
+let state = load();
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  } catch { return defaultState(); }
+}
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------- Hilfsfunktionen ---------- */
+const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+const fmtDate = d => new Date(d + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+const todayStr = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+};
+function daysUntil(dateStr) {
+  const t = new Date(todayStr() + "T00:00:00");
+  const d = new Date(dateStr + "T00:00:00");
+  return Math.round((d - t) / 86400000);
+}
+function countdownBadge(dateStr) {
+  const n = daysUntil(dateStr);
+  if (n < 0)  return `<span class="badge">vorbei</span>`;
+  if (n === 0) return `<span class="badge today">Heute! 🎉</span>`;
+  if (n === 1) return `<span class="badge soon">morgen</span>`;
+  if (n <= 14) return `<span class="badge soon">in ${n} Tagen</span>`;
+  return `<span class="badge">in ${n} Tagen</span>`;
+}
+function parseAmount(str) {
+  const v = parseFloat(String(str).replace(/\./g, "").replace(",", "."));
+  return isNaN(v) ? null : Math.round(v * 100) / 100;
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+const nameOf = who => who === "A" ? state.settings.nameA : who === "B" ? state.settings.nameB : "Beide";
+
+/* ---------- Tabs ---------- */
+document.getElementById("mainNav").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-tab]");
+  if (!btn) return;
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b === btn));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + btn.dataset.tab));
+});
+
+/* ---------- Hell/Dunkel ---------- */
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const root = document.documentElement;
+  const isDark = root.dataset.theme === "dark" ||
+    (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  root.dataset.theme = isDark ? "light" : "dark";
+  renderCosts(); // Diagrammfarben neu zeichnen
+});
+
+/* ---------- Übersicht ---------- */
+function renderOverview() {
+  const { total, totalA } = monthTotals(currentMonth);
+  document.getElementById("ovMonthTotal").textContent = eur.format(total);
+  document.getElementById("ovMonthName").textContent = monthName(currentMonth);
+  document.getElementById("ovSaldo").innerHTML = saldoText(total, totalA);
+
+  const open = state.todos.filter(t => !t.done).length;
+  document.getElementById("ovTodos").textContent = open;
+  document.getElementById("ovTodosSub").textContent = open === 0 ? "Alles erledigt! 🎉" : "noch zu erledigen";
+
+  const upcoming = state.events.filter(e => daysUntil(e.date) >= 0).sort((a, b) => a.date.localeCompare(b.date));
+  const next = upcoming[0];
+  document.getElementById("ovNextEvent").textContent = next ? next.title : "–";
+  document.getElementById("ovNextEventSub").innerHTML = next ? fmtDate(next.date) + " · " + countdownBadge(next.date) : "Noch nichts geplant";
+
+  const topics = state.topics.filter(t => !t.done).slice(0, 6);
+  document.getElementById("ovTopics").innerHTML = topics.length
+    ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
+    : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
+
+  document.getElementById("ovEvents").innerHTML = upcoming.slice(0, 5).map(e =>
+    `<li><span class="grow">${esc(e.title)}</span><span class="badge">${fmtDate(e.date)}</span>${countdownBadge(e.date)}</li>`
+  ).join("") || `<li><span class="empty">Keine Termine eingetragen.</span></li>`;
+
+  document.getElementById("headerNames").textContent = state.settings.nameA + " & " + state.settings.nameB;
+}
+
+/* ---------- Meetings ---------- */
+document.getElementById("topicForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const input = document.getElementById("topicInput");
+  state.topics.push({ id: uid(), text: input.value.trim(), done: false });
+  input.value = ""; save(); renderAll();
+});
+function renderTopics() {
+  const list = document.getElementById("topicList");
+  list.innerHTML = state.topics.map(t => `
+    <li class="${t.done ? "done" : ""}">
+      <input type="checkbox" ${t.done ? "checked" : ""} data-topic="${t.id}">
+      <span class="grow">${esc(t.text)}</span>
+      <button class="icon" data-del-topic="${t.id}" title="Löschen">✕</button>
+    </li>`).join("") || `<div class="empty">Noch keine Themen – schreibt einfach auf, was euch einfällt.</div>`;
+}
+document.getElementById("topicList").addEventListener("click", e => {
+  const cb = e.target.closest("input[data-topic]");
+  if (cb) { const t = state.topics.find(x => x.id === cb.dataset.topic); t.done = cb.checked; save(); renderAll(); return; }
+  const del = e.target.closest("[data-del-topic]");
+  if (del) { state.topics = state.topics.filter(x => x.id !== del.dataset.delTopic); save(); renderAll(); }
+});
+
+document.getElementById("protocolForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.protocols.push({
+    id: uid(),
+    date: document.getElementById("protocolDate").value,
+    title: document.getElementById("protocolTitle").value.trim(),
+    notes: document.getElementById("protocolNotes").value.trim()
+  });
+  document.getElementById("protocolTitle").value = "";
+  document.getElementById("protocolNotes").value = "";
+  save(); renderAll();
+});
+function renderProtocols() {
+  const el = document.getElementById("protocolList");
+  const sorted = [...state.protocols].sort((a, b) => b.date.localeCompare(a.date));
+  el.innerHTML = sorted.map(p => `
+    <details class="protocol">
+      <summary><span>${esc(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
+        <span style="flex:1"></span><button class="icon" data-del-protocol="${p.id}" title="Löschen">✕</button></summary>
+      <div class="p-body">${esc(p.notes) || "<i>Keine Notizen.</i>"}</div>
+    </details>`).join("") || `<div class="empty">Noch keine Protokolle. Nach eurem ersten Meeting einfach oben eintragen.</div>`;
+}
+document.getElementById("protocolList").addEventListener("click", e => {
+  const del = e.target.closest("[data-del-protocol]");
+  if (del && confirm("Dieses Protokoll wirklich löschen?")) {
+    state.protocols = state.protocols.filter(p => p.id !== del.dataset.delProtocol);
+    save(); renderAll();
+  }
+});
+
+/* ---------- Kosten ---------- */
+let currentMonth = todayStr().slice(0, 7); // "YYYY-MM"
+function monthName(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+}
+function shiftMonth(ym, delta) {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+function monthExpenses(ym) { return state.expenses.filter(e => e.date.startsWith(ym)); }
+function monthTotals(ym) {
+  const list = monthExpenses(ym);
+  const total  = list.reduce((s, e) => s + e.amount, 0);
+  const totalA = list.filter(e => e.payer === "A").reduce((s, e) => s + e.amount, 0);
+  return { total, totalA, totalB: total - totalA };
+}
+function saldoText(total, totalA) {
+  const diff = totalA - total / 2; // >0: A hat mehr bezahlt
+  if (Math.abs(diff) < 0.005 ) return `<span class="saldo-good">Ausgeglichen ✔</span>`;
+  const debtor  = diff > 0 ? state.settings.nameB : state.settings.nameA;
+  const creditor = diff > 0 ? state.settings.nameA : state.settings.nameB;
+  return `${esc(debtor)} → ${esc(creditor)}: <b>${eur.format(Math.abs(diff))}</b>`;
+}
+
+document.getElementById("monthPrev").addEventListener("click", () => { currentMonth = shiftMonth(currentMonth, -1); renderAll(); });
+document.getElementById("monthNext").addEventListener("click", () => { currentMonth = shiftMonth(currentMonth, 1); renderAll(); });
+
+document.getElementById("expenseForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const amount = parseAmount(document.getElementById("expAmount").value);
+  if (amount === null || amount <= 0) { alert("Bitte einen gültigen Betrag eingeben, z. B. 12,50"); return; }
+  state.expenses.push({
+    id: uid(),
+    date: document.getElementById("expDate").value,
+    desc: document.getElementById("expDesc").value.trim(),
+    amount,
+    payer: document.getElementById("expPayer").value,
+    category: document.getElementById("expCategory").value
+  });
+  document.getElementById("expDesc").value = "";
+  document.getElementById("expAmount").value = "";
+  currentMonth = document.getElementById("expDate").value.slice(0, 7);
+  save(); renderAll();
+});
+
+function renderCosts() {
+  document.getElementById("monthLabel").textContent = monthName(currentMonth);
+  const { total, totalA, totalB } = monthTotals(currentMonth);
+  document.getElementById("costTotal").textContent = eur.format(total);
+  document.getElementById("costLabelA").textContent = state.settings.nameA + " hat bezahlt";
+  document.getElementById("costLabelB").textContent = state.settings.nameB + " hat bezahlt";
+  document.getElementById("costTotalA").textContent = eur.format(totalA);
+  document.getElementById("costTotalB").textContent = eur.format(totalB);
+  document.getElementById("costSaldo").innerHTML = saldoText(total, totalA);
+
+  // Legende
+  const css = getComputedStyle(document.documentElement);
+  const colA = css.getPropertyValue("--series-a").trim();
+  const colB = css.getPropertyValue("--series-b").trim();
+  document.getElementById("chartLegend").innerHTML =
+    `<span class="key"><span class="swatch" style="background:${colA}"></span>${esc(state.settings.nameA)}</span>` +
+    `<span class="key"><span class="swatch" style="background:${colB}"></span>${esc(state.settings.nameB)}</span>`;
+
+  drawChart(colA, colB);
+  renderExpenseTable();
+}
+
+function renderExpenseTable() {
+  const list = monthExpenses(currentMonth).sort((a, b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById("expenseTable");
+  tbody.innerHTML = list.map(e => `
+    <tr>
+      <td>${fmtDate(e.date)}</td>
+      <td>${esc(e.desc)}</td>
+      <td><span class="badge">${esc(e.category)}</span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}</span></td>
+      <td class="num">${eur.format(e.amount)}</td>
+      <td><button class="icon" data-del-exp="${e.id}" title="Löschen">✕</button></td>
+    </tr>`).join("");
+  document.getElementById("expenseTableWrap").style.display = list.length ? "" : "none";
+  document.getElementById("expenseEmpty").style.display = list.length ? "none" : "";
+}
+document.getElementById("expenseTable").addEventListener("click", e => {
+  const del = e.target.closest("[data-del-exp]");
+  if (del && confirm("Diesen Eintrag wirklich löschen?")) {
+    state.expenses = state.expenses.filter(x => x.id !== del.dataset.delExp);
+    save(); renderAll();
+  }
+});
+
+/* Gestapeltes Balkendiagramm (SVG) */
+function drawChart(colA, colB) {
+  const svg = document.getElementById("costChart");
+  const list = monthExpenses(currentMonth);
+  const css = getComputedStyle(document.documentElement);
+  const gridCol = css.getPropertyValue("--grid").trim();
+  const baseCol = css.getPropertyValue("--baseline").trim();
+  const mutedCol = css.getPropertyValue("--text-muted").trim();
+  const inkCol = css.getPropertyValue("--text-secondary").trim();
+
+  const byCat = {};
+  for (const e of list) {
+    byCat[e.category] = byCat[e.category] || { A: 0, B: 0 };
+    byCat[e.category][e.payer] += e.amount;
+  }
+  const cats = Object.keys(byCat).sort((a, b) => (byCat[b].A + byCat[b].B) - (byCat[a].A + byCat[a].B));
+
+  const W = svg.clientWidth || 800, H = 260;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  if (!cats.length) {
+    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="${mutedCol}" font-size="14" font-style="italic">Sobald ihr Ausgaben eintragt, erscheint hier das Diagramm.</text>`;
+    return;
+  }
+
+  const padL = 56, padR = 16, padT = 26, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(...cats.map(c => byCat[c].A + byCat[c].B));
+  const niceMax = niceCeil(maxVal);
+  const y = v => padT + plotH - (v / niceMax) * plotH;
+  const bandW = plotW / cats.length;
+  const barW = Math.min(24, bandW * 0.5);
+
+  let out = "";
+  // Gitterlinien + Y-Achse
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const v = (niceMax / steps) * i, yy = y(v);
+    out += `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="${i === 0 ? baseCol : gridCol}" stroke-width="1"/>`;
+    out += `<text x="${padL - 8}" y="${yy + 4}" text-anchor="end" fill="${mutedCol}" font-size="11" font-variant-numeric="tabular-nums">${v.toLocaleString("de-DE", { maximumFractionDigits: 0 })} €</text>`;
+  }
+
+  cats.forEach((cat, i) => {
+    const cx = padL + bandW * i + bandW / 2;
+    const x = cx - barW / 2;
+    const a = byCat[cat].A, b = byCat[cat].B, tot = a + b;
+    const gap = (a > 0 && b > 0) ? 2 : 0; // 2px Lücke zwischen Segmenten
+
+    const yTop = y(tot);
+    const yMid = y(a); // A unten, B oben
+    // Segment A (unten, eckig an der Basislinie; runde Kappe nur wenn A oben endet)
+    if (a > 0) {
+      const topOfA = b > 0 ? yMid + gap : yMid;
+      out += barPath(x, topOfA, barW, y(0) - topOfA, b > 0 ? 0 : 4, colA, cat, "A", a, tot);
+    }
+    if (b > 0) {
+      out += barPath(x, yTop, barW, yMid - yTop, 4, colB, cat, "B", b, tot);
+    }
+    // Summen-Label auf der Kappe + Kategoriename
+    out += `<text x="${cx}" y="${yTop - 7}" text-anchor="middle" fill="${inkCol}" font-size="11" font-weight="600">${tot.toLocaleString("de-DE", { maximumFractionDigits: 0 })} €</text>`;
+    out += `<text x="${cx}" y="${H - 12}" text-anchor="middle" fill="${mutedCol}" font-size="12">${esc(cat)}</text>`;
+  });
+  svg.innerHTML = out;
+}
+function barPath(x, yTop, w, h, r, color, cat, payer, val, tot) {
+  if (h <= 0) return "";
+  r = Math.min(r, h);
+  const d = r > 0
+    ? `M${x},${yTop + h} L${x},${yTop + r} Q${x},${yTop} ${x + r},${yTop} L${x + w - r},${yTop} Q${x + w},${yTop} ${x + w},${yTop + r} L${x + w},${yTop + h} Z`
+    : `M${x},${yTop} h${w} v${h} h${-w} Z`;
+  return `<path d="${d}" fill="${color}" data-cat="${esc(cat)}" data-payer="${payer}" data-val="${val}" data-tot="${tot}" style="cursor:default"/>`;
+}
+function niceCeil(v) {
+  if (v <= 0) return 10;
+  const pow = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (v <= m * pow) return m * pow;
+  return 10 * pow;
+}
+
+/* Tooltip fürs Diagramm */
+const tooltip = document.getElementById("chartTooltip");
+document.getElementById("costChart").addEventListener("mousemove", e => {
+  const p = e.target.closest("path[data-cat]");
+  if (!p) { tooltip.style.display = "none"; return; }
+  const val = parseFloat(p.dataset.val), tot = parseFloat(p.dataset.tot);
+  tooltip.innerHTML = `<b>${esc(p.dataset.cat)}</b> · ${esc(nameOf(p.dataset.payer))}: ${eur.format(val)} (gesamt ${eur.format(tot)})`;
+  tooltip.style.display = "block";
+  const wrap = tooltip.parentElement.getBoundingClientRect();
+  tooltip.style.left = Math.min(e.clientX - wrap.left + 12, wrap.width - tooltip.offsetWidth - 4) + "px";
+  tooltip.style.top = (e.clientY - wrap.top - 34) + "px";
+});
+document.getElementById("costChart").addEventListener("mouseleave", () => tooltip.style.display = "none");
+
+/* ---------- Kalender / Termine ---------- */
+document.getElementById("eventForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.events.push({
+    id: uid(),
+    date: document.getElementById("eventDate").value,
+    title: document.getElementById("eventTitle").value.trim()
+  });
+  document.getElementById("eventTitle").value = "";
+  save(); renderAll();
+});
+function renderEvents() {
+  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
+  document.getElementById("eventList").innerHTML = sorted.map(e => `
+    <li>
+      <span class="grow">${esc(e.title)}</span>
+      <span class="badge">${fmtDate(e.date)}</span>
+      ${countdownBadge(e.date)}
+      <button class="icon" data-del-event="${e.id}" title="Löschen">✕</button>
+    </li>`).join("") || `<div class="empty">Noch keine Termine – tragt z. B. euren Jahrestag ein! ❤️</div>`;
+
+  const container = document.getElementById("calendarContainer");
+  const url = state.settings.calendarUrl;
+  if (url && url.startsWith("https://calendar.google.com/")) {
+    if (!container.querySelector("iframe") || container.querySelector("iframe").src !== url) {
+      container.innerHTML = `<iframe class="cal-frame" src="${esc(url)}" frameborder="0" scrolling="no" title="Google Kalender"></iframe>`;
+    }
+  } else {
+    container.innerHTML = `<div class="empty">Noch kein Kalender verbunden. So geht's: 👇</div>`;
+  }
+}
+document.getElementById("eventList").addEventListener("click", e => {
+  const del = e.target.closest("[data-del-event]");
+  if (del) { state.events = state.events.filter(x => x.id !== del.dataset.delEvent); save(); renderAll(); }
+});
+
+/* ---------- To-dos ---------- */
+document.getElementById("todoForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.todos.push({ id: uid(), text: document.getElementById("todoInput").value.trim(), who: document.getElementById("todoWho").value, done: false });
+  document.getElementById("todoInput").value = "";
+  save(); renderAll();
+});
+function renderTodos() {
+  document.getElementById("todoList").innerHTML = state.todos.map(t => `
+    <li class="${t.done ? "done" : ""}">
+      <input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
+      <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>
+      <span class="grow">${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
+      <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>
+    </li>`).join("") || `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`;
+}
+document.getElementById("todoList").addEventListener("click", e => {
+  const cb = e.target.closest("input[data-todo]");
+  if (cb) { const t = state.todos.find(x => x.id === cb.dataset.todo); t.done = cb.checked; save(); renderAll(); return; }
+  const del = e.target.closest("[data-del-todo]");
+  if (del) { state.todos = state.todos.filter(x => x.id !== del.dataset.delTodo); save(); renderAll(); }
+});
+document.getElementById("clearDoneTodos").addEventListener("click", () => {
+  state.todos = state.todos.filter(t => !t.done); save(); renderAll();
+});
+
+/* ---------- Geschenke ---------- */
+function bindGiftForm(person) {
+  document.getElementById("giftForm" + person).addEventListener("submit", e => {
+    e.preventDefault();
+    const input = document.getElementById("giftInput" + person);
+    state.gifts[person].push({ id: uid(), text: input.value.trim(), done: false });
+    input.value = ""; save(); renderAll();
+  });
+  document.getElementById("giftToggle" + person).addEventListener("click", () => {
+    state.gifts["hidden" + person] = !state.gifts["hidden" + person]; save(); renderAll();
+  });
+  document.getElementById("giftList" + person).addEventListener("click", e => {
+    const cb = e.target.closest("input[data-gift]");
+    if (cb) { const g = state.gifts[person].find(x => x.id === cb.dataset.gift); g.done = cb.checked; save(); renderAll(); return; }
+    const del = e.target.closest("[data-del-gift]");
+    if (del) { state.gifts[person] = state.gifts[person].filter(x => x.id !== del.dataset.delGift); save(); renderAll(); }
+  });
+}
+bindGiftForm("A"); bindGiftForm("B");
+function renderGifts() {
+  for (const person of ["A", "B"]) {
+    document.getElementById("giftHead" + person).textContent = "Ideen für " + nameOf(person);
+    const hidden = state.gifts["hidden" + person];
+    document.getElementById("giftToggle" + person).textContent = hidden ? "🙈 Anzeigen" : "👁 Verstecken";
+    const ul = document.getElementById("giftList" + person);
+    ul.classList.toggle("blurred", hidden);
+    ul.innerHTML = state.gifts[person].map(g => `
+      <li class="${g.done ? "done" : ""}">
+        <input type="checkbox" ${g.done ? "checked" : ""} data-gift="${g.id}" title="Schon besorgt?">
+        <span class="grow">${esc(g.text)}</span>
+        <button class="icon" data-del-gift="${g.id}" title="Löschen">✕</button>
+      </li>`).join("") || `<div class="empty">Noch keine Ideen.</div>`;
+  }
+}
+
+/* ---------- Projekte ---------- */
+document.getElementById("projectForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.projects.push({
+    id: uid(),
+    name: document.getElementById("projectName").value.trim(),
+    notes: document.getElementById("projectNotes").value.trim(),
+    items: []
+  });
+  document.getElementById("projectName").value = "";
+  document.getElementById("projectNotes").value = "";
+  save(); renderAll();
+});
+function renderProjects() {
+  const el = document.getElementById("projectList");
+  el.innerHTML = state.projects.map(p => {
+    const done = p.items.filter(i => i.done).length;
+    const pct = p.items.length ? Math.round(done / p.items.length * 100) : 0;
+    return `
+    <div class="project-card">
+      <h3>${esc(p.name)} <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button></h3>
+      ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
+      <div style="font-size:12px; color:var(--text-muted);">${done} von ${p.items.length} Schritten erledigt${p.items.length ? " · " + pct + " %" : ""}</div>
+      <div class="meter"><div style="width:${pct}%"></div></div>
+      <ul class="plain" style="margin-top:8px;">
+        ${p.items.map(i => `
+          <li class="${i.done ? "done" : ""}">
+            <input type="checkbox" ${i.done ? "checked" : ""} data-pitem="${p.id}:${i.id}">
+            <span class="grow">${esc(i.text)}</span>
+            <button class="icon" data-del-pitem="${p.id}:${i.id}" title="Löschen">✕</button>
+          </li>`).join("")}
+      </ul>
+      <form class="row" data-pform="${p.id}" style="margin-top:8px; margin-bottom:0;">
+        <input type="text" placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;" required>
+        <button class="primary" type="submit">+</button>
+      </form>
+    </div>`;
+  }).join("") || `<div class="empty">Noch keine Projekte. Legt oben euer erstes an – z. B. den nächsten Urlaub! ✈️</div>`;
+}
+document.getElementById("projectList").addEventListener("submit", e => {
+  const form = e.target.closest("form[data-pform]");
+  if (!form) return;
+  e.preventDefault();
+  const input = form.querySelector("input");
+  const proj = state.projects.find(p => p.id === form.dataset.pform);
+  proj.items.push({ id: uid(), text: input.value.trim(), done: false });
+  input.value = ""; save(); renderAll();
+});
+document.getElementById("projectList").addEventListener("click", e => {
+  const cb = e.target.closest("input[data-pitem]");
+  if (cb) {
+    const [pid, iid] = cb.dataset.pitem.split(":");
+    const item = state.projects.find(p => p.id === pid).items.find(i => i.id === iid);
+    item.done = cb.checked; save(); renderAll(); return;
+  }
+  const delI = e.target.closest("[data-del-pitem]");
+  if (delI) {
+    const [pid, iid] = delI.dataset.delPitem.split(":");
+    const proj = state.projects.find(p => p.id === pid);
+    proj.items = proj.items.filter(i => i.id !== iid);
+    save(); renderAll(); return;
+  }
+  const delP = e.target.closest("[data-del-project]");
+  if (delP && confirm("Dieses Projekt mit allen Schritten löschen?")) {
+    state.projects = state.projects.filter(p => p.id !== delP.dataset.delProject);
+    save(); renderAll();
+  }
+});
+
+/* ---------- Einstellungen ---------- */
+document.getElementById("namesForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.settings.nameA = document.getElementById("nameA").value.trim() || "Person 1";
+  state.settings.nameB = document.getElementById("nameB").value.trim() || "Person 2";
+  save(); renderAll();
+});
+document.getElementById("calForm").addEventListener("submit", e => {
+  e.preventDefault();
+  state.settings.calendarUrl = document.getElementById("calUrl").value.trim();
+  save(); renderAll();
+  alert("Gespeichert! Schau im Tab „Kalender“ nach.");
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "unser-dashboard-" + todayStr() + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+document.getElementById("importFile").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data.settings) throw new Error("kein Dashboard-Export");
+      if (confirm("Import ersetzt die aktuellen Daten in diesem Browser. Fortfahren?")) {
+        state = Object.assign(defaultState(), data);
+        save(); renderAll();
+        alert("Import erfolgreich! ✔");
+      }
+    } catch { alert("Diese Datei ist leider keine gültige Dashboard-Sicherung."); }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.")) {
+    state = defaultState(); save(); renderAll();
+  }
+});
+document.getElementById("demoBtn").addEventListener("click", () => {
+  if (!confirm("Beispieldaten laden? Eure bisherigen Einträge bleiben erhalten; es kommen nur Demo-Einträge dazu.")) return;
+  const m = todayStr().slice(0, 7);
+  state.topics.push(
+    { id: uid(), text: "Urlaubsbudget festlegen", done: false },
+    { id: uid(), text: "Wochenendplanung: Eltern besuchen?", done: false });
+  state.expenses.push(
+    { id: uid(), date: m + "-03", desc: "Wocheneinkauf", amount: 87.40, payer: "A", category: "Lebensmittel" },
+    { id: uid(), date: m + "-05", desc: "Kinoabend", amount: 32.00, payer: "B", category: "Freizeit" },
+    { id: uid(), date: m + "-10", desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
+    { id: uid(), date: m + "-12", desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" });
+  const in14 = new Date(Date.now() + 14 * 86400000);
+  state.events.push({ id: uid(), date: in14.toISOString().slice(0, 10), title: "Konzertabend 🎶" });
+  state.todos.push(
+    { id: uid(), text: "Wocheneinkauf erledigen", who: "A", done: false },
+    { id: uid(), text: "Bad putzen", who: "B", done: false },
+    { id: uid(), text: "Urlaubsfotos aussortieren", who: "both", done: false });
+  state.projects.push({
+    id: uid(), name: "Sommerurlaub", notes: "Zwei Wochen Italien",
+    items: [
+      { id: uid(), text: "Reiseziel festlegen", done: true },
+      { id: uid(), text: "Unterkunft buchen", done: false },
+      { id: uid(), text: "Packliste schreiben", done: false }
+    ]
+  });
+  save(); renderAll();
+});
+
+/* ---------- Alles rendern ---------- */
+function fillSelects() {
+  const payerHtml = `<option value="A">${esc(state.settings.nameA)}</option><option value="B">${esc(state.settings.nameB)}</option>`;
+  document.getElementById("expPayer").innerHTML = payerHtml;
+  document.getElementById("todoWho").innerHTML = payerHtml + `<option value="both">Beide</option>`;
+  document.getElementById("nameA").value = state.settings.nameA;
+  document.getElementById("nameB").value = state.settings.nameB;
+  document.getElementById("calUrl").value = state.settings.calendarUrl;
+}
+function renderAll() {
+  fillSelects();
+  renderOverview();
+  renderTopics();
+  renderProtocols();
+  renderCosts();
+  renderEvents();
+  renderTodos();
+  renderGifts();
+  renderProjects();
+}
+
+document.getElementById("protocolDate").value = todayStr();
+document.getElementById("expDate").value = todayStr();
+renderAll();
+window.addEventListener("resize", () => renderCosts());
+</script>
+</body>
+</html>
