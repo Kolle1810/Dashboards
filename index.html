@@ -7,91 +7,91 @@
 <style>
   :root {
     color-scheme: light;
-    --page:           #eaf6f0;
-    --surface:        #fbfdfb;
+    --page:           #fcedf0;
+    --surface:        #fdf7f8;
     --text-primary:   #0b0b0b;
     --text-secondary: #52514e;
     --text-muted:     #898781;
-    --grid:           #d9ede2;
-    --baseline:       #aed7c2;
-    --border:         rgba(18,128,95,0.18);
+    --grid:           #f5dee2;
+    --baseline:       #e3b8c3;
+    --border:         rgba(140,50,75,0.16);
     --series-a:       #2a78d6;   /* Kolja – Blau */
     --series-b:       #e87ba4;   /* Carina – Rosa */
-    --accent:         #12805f;   /* Mintgrün */
-    --accent-soft:    #d7f0e6;
-    --accent-ink:     #ffffff;   /* Text auf Mint-Flächen */
-    --accent-2:       #e8b93e;   /* Butteryellow */
-    --accent-2-soft:  #fbefc8;
-    --accent-2-ink:   #2b2205;   /* Text auf Gelb-Flächen */
-    --good:           #12805f;
+    --base:           #f3bfc9;   /* Blush Pink */
+    --base-soft:      #fcedf0;
+    --base-ink:       #5c2430;   /* Text auf Blush-Pink-Flächen */
+    --accent:         #9acbee;   /* Sky Blue */
+    --accent-soft:    #e3f1fc;
+    --accent-ink:     #163651;   /* Text auf Sky-Blue-Flächen */
+    --good:           #2e7a45;
     --critical:       #d03b3b;
     --shadow:         0 1px 3px rgba(11,11,11,0.06);
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page:           #0a1512;
-      --surface:        #15211c;
+      --page:           #170e11;
+      --surface:        #211419;
       --text-primary:   #ffffff;
       --text-secondary: #c3c2b7;
       --text-muted:     #898781;
-      --grid:           #223129;
-      --baseline:       #35493e;
-      --border:         rgba(52,199,149,0.20);
+      --grid:           #2c2024;
+      --baseline:       #4a333b;
+      --border:         rgba(201,138,153,0.22);
       --series-a:       #3987e5;
       --series-b:       #d55181;
-      --accent:         #34c795;
-      --accent-soft:    #123d2f;
-      --accent-ink:     #08211a;
-      --accent-2:       #f0c860;
-      --accent-2-soft:  #4a3712;
-      --accent-2-ink:   #2b2205;
-      --good:           #34c795;
+      --base:           #c98a99;
+      --base-soft:      #33222a;
+      --base-ink:       #2b0e14;
+      --accent:         #7fb8e3;
+      --accent-soft:    #17293a;
+      --accent-ink:     #0a1e30;
+      --good:           #6fbf7a;
       --critical:       #e66767;
       --shadow:         none;
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page:           #0a1512;
-    --surface:        #15211c;
+    --page:           #170e11;
+    --surface:        #211419;
     --text-primary:   #ffffff;
     --text-secondary: #c3c2b7;
     --text-muted:     #898781;
-    --grid:           #223129;
-    --baseline:       #35493e;
-    --border:         rgba(52,199,149,0.20);
+    --grid:           #2c2024;
+    --baseline:       #4a333b;
+    --border:         rgba(201,138,153,0.22);
     --series-a:       #3987e5;
     --series-b:       #d55181;
-    --accent:         #34c795;
-    --accent-soft:    #123d2f;
-    --accent-ink:     #08211a;
-    --accent-2:       #f0c860;
-    --accent-2-soft:  #4a3712;
-    --accent-2-ink:   #2b2205;
-    --good:           #34c795;
+    --base:           #c98a99;
+    --base-soft:      #33222a;
+    --base-ink:       #2b0e14;
+    --accent:         #7fb8e3;
+    --accent-soft:    #17293a;
+    --accent-ink:     #0a1e30;
+    --good:           #6fbf7a;
     --critical:       #e66767;
     --shadow:         none;
   }
   :root[data-theme="light"] {
     color-scheme: light;
-    --page:           #eaf6f0;
-    --surface:        #fbfdfb;
+    --page:           #fcedf0;
+    --surface:        #fdf7f8;
     --text-primary:   #0b0b0b;
     --text-secondary: #52514e;
     --text-muted:     #898781;
-    --grid:           #d9ede2;
-    --baseline:       #aed7c2;
-    --border:         rgba(18,128,95,0.18);
+    --grid:           #f5dee2;
+    --baseline:       #e3b8c3;
+    --border:         rgba(140,50,75,0.16);
     --series-a:       #2a78d6;
     --series-b:       #e87ba4;
-    --accent:         #12805f;
-    --accent-soft:    #d7f0e6;
-    --accent-ink:     #ffffff;
-    --accent-2:       #e8b93e;
-    --accent-2-soft:  #fbefc8;
-    --accent-2-ink:   #2b2205;
-    --good:           #12805f;
+    --base:           #f3bfc9;
+    --base-soft:      #fcedf0;
+    --base-ink:       #5c2430;
+    --accent:         #9acbee;
+    --accent-soft:    #e3f1fc;
+    --accent-ink:     #163651;
+    --good:           #2e7a45;
     --critical:       #d03b3b;
     --shadow:         0 1px 3px rgba(11,11,11,0.06);
   }
@@ -107,7 +107,7 @@
   }
 
   header {
-    background: var(--accent);
+    background: var(--base);
     padding: 14px 20px 12px;
     position: sticky;
     top: 0;
@@ -120,11 +120,11 @@
     max-width: 1000px;
     margin: 0 auto;
   }
-  .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--accent-ink); }
-  .app-title small { font-weight: 400; color: var(--accent-ink); opacity: 0.75; font-size: 13px; margin-left: 8px; }
+  .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--base-ink); }
+  .app-title small { font-weight: 400; color: var(--base-ink); opacity: 0.75; font-size: 13px; margin-left: 8px; }
   #themeToggle {
-    background: none; border: 1px solid color-mix(in srgb, var(--accent-ink) 35%, transparent); border-radius: 8px;
-    padding: 5px 10px; cursor: pointer; color: var(--accent-ink); font-size: 14px; opacity: 0.9;
+    background: none; border: 1px solid color-mix(in srgb, var(--base-ink) 35%, transparent); border-radius: 8px;
+    padding: 5px 10px; cursor: pointer; color: var(--base-ink); font-size: 14px; opacity: 0.9;
   }
   #themeToggle:hover { opacity: 1; }
   nav {
@@ -133,10 +133,10 @@
   }
   nav button {
     background: none; border: none; padding: 8px 13px; cursor: pointer;
-    font-size: 14px; color: var(--accent-ink); opacity: 0.72; white-space: nowrap;
+    font-size: 14px; color: var(--base-ink); opacity: 0.72; white-space: nowrap;
     border-radius: 999px; font-family: inherit;
   }
-  nav button.active { background: var(--accent-2); color: var(--accent-2-ink); font-weight: 600; opacity: 1; }
+  nav button.active { background: var(--accent); color: var(--accent-ink); font-weight: 600; opacity: 1; }
   nav button:hover { opacity: 1; }
 
   main { max-width: 1000px; margin: 0 auto; padding: 20px; }
@@ -144,7 +144,7 @@
   .tab.active { display: block; }
 
   .card {
-    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent);
+    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--base);
     border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow);
   }
   .card h2 { margin: 0 0 4px; font-size: 17px; }
@@ -152,10 +152,10 @@
 
   .tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
   .tile {
-    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent);
+    background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--base);
     border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
   }
-  .tile.hero { border-top-color: var(--accent-2); }
+  .tile.hero { border-top-color: var(--accent); }
   .tile .label { font-size: 13px; color: var(--text-secondary); }
   .tile .value { font-size: 30px; font-weight: 600; margin-top: 2px; }
   .tile .sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
@@ -200,7 +200,7 @@
     background: var(--page); border: 1px solid var(--border); color: var(--text-secondary);
     white-space: nowrap;
   }
-  .badge.solo { background: var(--accent-2); border-color: var(--accent-2); color: var(--accent-2-ink); font-weight: 600; }
+  .badge.solo { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 
   .who-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .who-a { background: var(--series-a); }
