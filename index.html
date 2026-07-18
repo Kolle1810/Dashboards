@@ -338,20 +338,21 @@
   <section class="tab" id="tab-calendar">
     <div class="card">
       <h2>Google Kalender</h2>
-      <p class="hint">Hier könnt ihr euren gemeinsamen Google-Kalender direkt anzeigen lassen.</p>
+      <p class="hint">Eure beiden Kalender in einer gemeinsamen Ansicht übereinandergelegt – Kolja in Blau, Carina in Rosa.</p>
+      <div class="legend" id="calendarLegend"></div>
       <div id="calendarContainer">
-        <div class="empty">Noch kein Kalender verbunden. So geht's: 👇</div>
+        <div class="empty">Noch keine Kalender verbunden. So geht's: 👇</div>
       </div>
       <details class="help">
-        <summary>Anleitung: Google Kalender einbinden (Schritt für Schritt)</summary>
+        <summary>Anleitung: Beide Kalender verbinden (Schritt für Schritt)</summary>
         <ol>
           <li>Öffne <b>calendar.google.com</b> am Computer.</li>
-          <li>Links bei „Meine Kalender“: fahre mit der Maus über euren gemeinsamen Kalender → klicke auf die drei Punkte → <b>„Einstellungen und Freigabe“</b>.</li>
-          <li>Scrolle zu <b>„Kalender integrieren“</b>.</li>
-          <li>Kopiere die Adresse unter <b>„Öffentliche URL für diesen Kalender“</b> bzw. den Link aus dem <b>„Einbettungscode“</b> (die Adresse, die mit <code>https://calendar.google.com/calendar/embed?...</code> beginnt).</li>
-          <li>Füge diese Adresse hier im Dashboard unter <b>⚙️ Einstellungen → Google-Kalender-Adresse</b> ein und speichere.</li>
+          <li>Links bei „Meine Kalender“: fahre mit der Maus über deinen Kalender → drei Punkte → <b>„Einstellungen und Freigabe“</b>.</li>
+          <li>Scrolle zu <b>„Kalender-ID“</b> und kopiere sie (sieht meist aus wie eine E-Mail-Adresse, z. B. <code>deinname@gmail.com</code>).</li>
+          <li>Scrolle außerdem zu <b>„Für bestimmte Personen zugänglich machen“</b> bzw. <b>„Zugriffsrechte für Ereignisse“</b> und stelle sicher, dass der Kalender <b>öffentlich</b> ist (oder für den anderen freigegeben) – sonst kann er hier nicht angezeigt werden.</li>
+          <li>Füge die Kalender-ID hier im Dashboard unter <b>⚙️ Einstellungen → Eure Kalender-IDs</b> in euer jeweiliges Feld ein und speichere.</li>
+          <li>Das macht ihr <b>beide einmal</b> mit eurer eigenen Kalender-ID – danach erscheinen beide Kalender automatisch zusammen hier oben.</li>
         </ol>
-        <p><b>Hinweis:</b> Damit der Kalender hier angezeigt werden kann, muss er in den Google-Einstellungen freigegeben („öffentlich“) sein – oder ihr seid im selben Browser bei Google angemeldet.</p>
       </details>
     </div>
   </section>
@@ -443,10 +444,11 @@
     </div>
 
     <div class="card">
-      <h2>Google-Kalender-Adresse</h2>
-      <p class="hint">Füge hier die Einbettungs-Adresse eures Google-Kalenders ein (Anleitung im Tab „Kalender“).</p>
+      <h2>Eure Kalender-IDs</h2>
+      <p class="hint">Jede*r trägt hier die eigene Google-Kalender-ID ein (Anleitung im Tab „Kalender“). Beide Kalender werden dann automatisch zu einer Ansicht kombiniert.</p>
       <form class="row" id="calForm">
-        <input type="url" id="calUrl" placeholder="https://calendar.google.com/calendar/embed?src=…" style="flex:1; min-width:260px;">
+        <input type="text" id="calIdA" placeholder="Kalender-ID, z. B. name@gmail.com" style="flex:1; min-width:220px;">
+        <input type="text" id="calIdB" placeholder="Kalender-ID, z. B. name@gmail.com" style="flex:1; min-width:220px;">
         <button class="primary" type="submit">Speichern</button>
       </form>
     </div>
@@ -475,7 +477,7 @@
 const STORE_KEY = "paarDashboard.v1";
 
 const defaultState = () => ({
-  settings: { nameA: "Kolja", nameB: "Carina", calendarUrl: "" },
+  settings: { nameA: "Kolja", nameB: "Carina", calendarIdA: "", calendarIdB: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
@@ -790,16 +792,38 @@ document.getElementById("costChart").addEventListener("mousemove", e => {
 document.getElementById("costChart").addEventListener("mouseleave", () => tooltip.style.display = "none");
 
 /* ---------- Kalender ---------- */
+function buildCalendarUrl() {
+  const css = getComputedStyle(document.documentElement);
+  const entries = [
+    { id: state.settings.calendarIdA.trim(), color: css.getPropertyValue("--series-a").trim() },
+    { id: state.settings.calendarIdB.trim(), color: css.getPropertyValue("--series-b").trim() }
+  ].filter(e => e.id);
+  if (!entries.length) return null;
+  const params = new URLSearchParams();
+  entries.forEach(e => params.append("src", e.id));
+  entries.forEach(e => params.append("color", e.color));
+  params.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin");
+  params.set("showTitle", "0");
+  params.set("showTz", "0");
+  return "https://calendar.google.com/calendar/embed?" + params.toString();
+}
 function renderCalendar() {
   const container = document.getElementById("calendarContainer");
-  const url = state.settings.calendarUrl;
-  if (url && url.startsWith("https://calendar.google.com/")) {
+  const url = buildCalendarUrl();
+  if (url) {
     if (!container.querySelector("iframe") || container.querySelector("iframe").src !== url) {
       container.innerHTML = `<iframe class="cal-frame" src="${esc(url)}" frameborder="0" scrolling="no" title="Google Kalender"></iframe>`;
     }
   } else {
-    container.innerHTML = `<div class="empty">Noch kein Kalender verbunden. So geht's: 👇</div>`;
+    container.innerHTML = `<div class="empty">Noch keine Kalender verbunden. So geht's: 👇</div>`;
   }
+
+  const legend = document.getElementById("calendarLegend");
+  const colA = getComputedStyle(document.documentElement).getPropertyValue("--series-a").trim();
+  const colB = getComputedStyle(document.documentElement).getPropertyValue("--series-b").trim();
+  legend.innerHTML =
+    `<span class="key"><span class="swatch" style="background:${colA}"></span>${esc(state.settings.nameA)}</span>` +
+    `<span class="key"><span class="swatch" style="background:${colB}"></span>${esc(state.settings.nameB)}</span>`;
 }
 
 /* ---------- To-dos ---------- */
@@ -976,7 +1000,8 @@ document.getElementById("namesForm").addEventListener("submit", e => {
 });
 document.getElementById("calForm").addEventListener("submit", e => {
   e.preventDefault();
-  state.settings.calendarUrl = document.getElementById("calUrl").value.trim();
+  state.settings.calendarIdA = document.getElementById("calIdA").value.trim();
+  state.settings.calendarIdB = document.getElementById("calIdB").value.trim();
   save(); renderAll();
   alert("Gespeichert! Schau im Tab „Kalender“ nach.");
 });
@@ -1046,7 +1071,10 @@ function fillSelects() {
   document.getElementById("todoWho").innerHTML = payerHtml + `<option value="both">Beide</option>`;
   document.getElementById("nameA").value = state.settings.nameA;
   document.getElementById("nameB").value = state.settings.nameB;
-  document.getElementById("calUrl").value = state.settings.calendarUrl;
+  document.getElementById("calIdA").value = state.settings.calendarIdA;
+  document.getElementById("calIdB").value = state.settings.calendarIdB;
+  document.getElementById("calIdA").placeholder = "Kalender-ID von " + state.settings.nameA + ", z. B. name@gmail.com";
+  document.getElementById("calIdB").placeholder = "Kalender-ID von " + state.settings.nameB + ", z. B. name@gmail.com";
 }
 function renderAll() {
   fillSelects();
