@@ -563,7 +563,13 @@ function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-    return Object.assign(defaultState(), JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    const merged = Object.assign(defaultState(), parsed);
+    // Verschachtelte Objekte einzeln zusammenführen, damit neu hinzugekommene
+    // Felder (z. B. "gifts.others") bei älteren gespeicherten Daten nicht fehlen.
+    merged.settings = Object.assign(defaultState().settings, parsed.settings || {});
+    merged.gifts = Object.assign(defaultState().gifts, parsed.gifts || {});
+    return merged;
   } catch { return defaultState(); }
 }
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
