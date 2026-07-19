@@ -246,7 +246,8 @@
       <p class="hint">Sammelt hier alles, was ihr besprechen wollt. Beim Meeting hakt ihr die Punkte einfach ab.</p>
       <form class="row" id="topicForm">
         <input type="text" id="topicInput" placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;" required>
-        <button class="primary" type="submit">Hinzufügen</button>
+        <button class="primary" type="submit" id="topicSubmitBtn">Hinzufügen</button>
+        <button class="ghost" type="button" id="topicCancelBtn" style="display:none;">Abbrechen</button>
       </form>
       <ul class="plain" id="topicList"></ul>
     </div>
@@ -260,8 +261,9 @@
           <input type="text" id="protocolTitle" placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;" required>
         </div>
         <textarea id="protocolNotes" rows="4" placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></textarea>
-        <div style="margin-top:8px;">
-          <button class="primary" type="submit">Protokoll speichern</button>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button class="primary" type="submit" id="protocolSubmitBtn">Protokoll speichern</button>
+          <button class="ghost" type="button" id="protocolCancelBtn" style="display:none;">Abbrechen</button>
         </div>
       </form>
       <div id="protocolList" style="margin-top:16px;"></div>
@@ -286,7 +288,8 @@
           <option>Reisen</option>
           <option>Sonstiges</option>
         </select>
-        <button class="primary" type="submit">Eintragen</button>
+        <button class="primary" type="submit" id="expSubmitBtn">Eintragen</button>
+        <button class="ghost" type="button" id="expCancelBtn" style="display:none;">Abbrechen</button>
       </form>
       <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
         <input type="checkbox" id="expSolo">
@@ -416,7 +419,8 @@
             <input type="checkbox" id="todoImportant"> ⭐ Sehr wichtig
           </label>
         </div>
-        <button class="primary" type="submit">Hinzufügen</button>
+        <button class="primary" type="submit" id="todoSubmitBtn">Hinzufügen</button>
+        <button class="ghost" type="button" id="todoCancelBtn" style="display:none;">Abbrechen</button>
       </form>
       <ul class="plain" id="todoList" style="margin-top:12px;"></ul>
       <div id="todoArchive"></div>
@@ -438,7 +442,8 @@
           </h3>
           <form class="row" id="giftFormA">
             <input type="text" id="giftInputA" placeholder="Neue Idee…" style="flex:1;" required>
-            <button class="primary" type="submit">+</button>
+            <button class="primary" type="submit" id="giftSubmitA">+</button>
+            <button class="ghost" type="button" id="giftCancelA" style="display:none;">Abbrechen</button>
           </form>
           <ul class="plain" id="giftListA"></ul>
         </div>
@@ -448,7 +453,8 @@
           </h3>
           <form class="row" id="giftFormB">
             <input type="text" id="giftInputB" placeholder="Neue Idee…" style="flex:1;" required>
-            <button class="primary" type="submit">+</button>
+            <button class="primary" type="submit" id="giftSubmitB">+</button>
+            <button class="ghost" type="button" id="giftCancelB" style="display:none;">Abbrechen</button>
           </form>
           <ul class="plain" id="giftListB"></ul>
         </div>
@@ -461,7 +467,8 @@
       <form class="row" id="giftFormOthers">
         <input type="text" id="giftInputOthersWho" placeholder="Für wen? z. B. „Hochzeit Lisa & Tom“" style="flex:1; min-width:160px;" required>
         <input type="text" id="giftInputOthersIdea" placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;" required>
-        <button class="primary" type="submit">+</button>
+        <button class="primary" type="submit" id="giftOthersSubmitBtn">+</button>
+        <button class="ghost" type="button" id="giftOthersCancelBtn" style="display:none;">Abbrechen</button>
       </form>
       <ul class="plain" id="giftListOthers"></ul>
     </div>
@@ -475,7 +482,8 @@
       <form class="row" id="projectForm">
         <input type="text" id="projectName" placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;" required>
         <input type="text" id="projectNotes" placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;">
-        <button class="primary" type="submit">Projekt anlegen</button>
+        <button class="primary" type="submit" id="projectSubmitBtn">Projekt anlegen</button>
+        <button class="ghost" type="button" id="projectCancelBtn" style="display:none;">Abbrechen</button>
       </form>
       <div id="projectList"></div>
     </div>
@@ -673,51 +681,107 @@ function renderOverview() {
 }
 
 /* ---------- Meetings ---------- */
+let editingTopicId = null;
+function resetTopicForm() {
+  editingTopicId = null;
+  document.getElementById("topicInput").value = "";
+  document.getElementById("topicSubmitBtn").textContent = "Hinzufügen";
+  document.getElementById("topicCancelBtn").style.display = "none";
+}
 document.getElementById("topicForm").addEventListener("submit", e => {
   e.preventDefault();
   const input = document.getElementById("topicInput");
-  state.topics.push({ id: uid(), text: input.value.trim(), done: false });
-  input.value = ""; save(); renderAll();
+  if (editingTopicId) {
+    const t = state.topics.find(x => x.id === editingTopicId);
+    t.text = input.value.trim();
+  } else {
+    state.topics.push({ id: uid(), text: input.value.trim(), done: false });
+  }
+  resetTopicForm();
+  save(); renderAll();
 });
+document.getElementById("topicCancelBtn").addEventListener("click", resetTopicForm);
 function renderTopics() {
   const list = document.getElementById("topicList");
   list.innerHTML = state.topics.map(t => `
     <li class="${t.done ? "done" : ""}">
       <input type="checkbox" ${t.done ? "checked" : ""} data-topic="${t.id}">
       <span class="grow">${esc(t.text)}</span>
+      <button class="icon" data-edit-topic="${t.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-topic="${t.id}" title="Löschen">✕</button>
     </li>`).join("") || `<div class="empty">Noch keine Themen – schreibt einfach auf, was euch einfällt.</div>`;
 }
 document.getElementById("topicList").addEventListener("click", e => {
   const cb = e.target.closest("input[data-topic]");
   if (cb) { const t = state.topics.find(x => x.id === cb.dataset.topic); t.done = cb.checked; save(); renderAll(); return; }
+  const edit = e.target.closest("[data-edit-topic]");
+  if (edit) {
+    const t = state.topics.find(x => x.id === edit.dataset.editTopic);
+    document.getElementById("topicInput").value = t.text;
+    document.getElementById("topicInput").focus();
+    editingTopicId = t.id;
+    document.getElementById("topicSubmitBtn").textContent = "Speichern";
+    document.getElementById("topicCancelBtn").style.display = "";
+    return;
+  }
   const del = e.target.closest("[data-del-topic]");
   if (del) { state.topics = state.topics.filter(x => x.id !== del.dataset.delTopic); save(); renderAll(); }
 });
 
-document.getElementById("protocolForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.protocols.push({
-    id: uid(),
-    date: document.getElementById("protocolDate").value,
-    title: document.getElementById("protocolTitle").value.trim(),
-    notes: document.getElementById("protocolNotes").value.trim()
-  });
+let editingProtocolId = null;
+function resetProtocolForm() {
+  editingProtocolId = null;
   document.getElementById("protocolTitle").value = "";
   document.getElementById("protocolNotes").value = "";
+  document.getElementById("protocolDate").value = todayStr();
+  document.getElementById("protocolSubmitBtn").textContent = "Protokoll speichern";
+  document.getElementById("protocolCancelBtn").style.display = "none";
+}
+document.getElementById("protocolForm").addEventListener("submit", e => {
+  e.preventDefault();
+  if (editingProtocolId) {
+    const p = state.protocols.find(x => x.id === editingProtocolId);
+    p.date = document.getElementById("protocolDate").value;
+    p.title = document.getElementById("protocolTitle").value.trim();
+    p.notes = document.getElementById("protocolNotes").value.trim();
+  } else {
+    state.protocols.push({
+      id: uid(),
+      date: document.getElementById("protocolDate").value,
+      title: document.getElementById("protocolTitle").value.trim(),
+      notes: document.getElementById("protocolNotes").value.trim()
+    });
+  }
+  resetProtocolForm();
   save(); renderAll();
 });
+document.getElementById("protocolCancelBtn").addEventListener("click", resetProtocolForm);
 function renderProtocols() {
   const el = document.getElementById("protocolList");
   const sorted = [...state.protocols].sort((a, b) => b.date.localeCompare(a.date));
   el.innerHTML = sorted.map(p => `
     <details class="protocol">
       <summary><span>${esc(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
-        <span style="flex:1"></span><button class="icon" data-del-protocol="${p.id}" title="Löschen">✕</button></summary>
+        <span style="flex:1"></span>
+        <button class="icon" data-edit-protocol="${p.id}" title="Bearbeiten">✏️</button>
+        <button class="icon" data-del-protocol="${p.id}" title="Löschen">✕</button></summary>
       <div class="p-body">${esc(p.notes) || "<i>Keine Notizen.</i>"}</div>
     </details>`).join("") || `<div class="empty">Noch keine Protokolle. Nach eurem ersten Meeting einfach oben eintragen.</div>`;
 }
 document.getElementById("protocolList").addEventListener("click", e => {
+  const edit = e.target.closest("[data-edit-protocol]");
+  if (edit) {
+    e.preventDefault();
+    const p = state.protocols.find(x => x.id === edit.dataset.editProtocol);
+    document.getElementById("protocolDate").value = p.date;
+    document.getElementById("protocolTitle").value = p.title;
+    document.getElementById("protocolNotes").value = p.notes;
+    editingProtocolId = p.id;
+    document.getElementById("protocolSubmitBtn").textContent = "Speichern";
+    document.getElementById("protocolCancelBtn").style.display = "";
+    document.getElementById("protocolTitle").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const del = e.target.closest("[data-del-protocol]");
   if (del && confirm("Dieses Protokoll wirklich löschen?")) {
     state.protocols = state.protocols.filter(p => p.id !== del.dataset.delProtocol);
@@ -758,25 +822,38 @@ function saldoText(total, totalA) {
 document.getElementById("monthPrev").addEventListener("click", () => { currentMonth = shiftMonth(currentMonth, -1); renderAll(); });
 document.getElementById("monthNext").addEventListener("click", () => { currentMonth = shiftMonth(currentMonth, 1); renderAll(); });
 
+let editingExpenseId = null;
+function resetExpenseForm() {
+  editingExpenseId = null;
+  document.getElementById("expDesc").value = "";
+  document.getElementById("expAmount").value = "";
+  document.getElementById("expSolo").checked = false;
+  document.getElementById("expDate").value = currentMonth;
+  document.getElementById("expSubmitBtn").textContent = "Eintragen";
+  document.getElementById("expCancelBtn").style.display = "none";
+}
 document.getElementById("expenseForm").addEventListener("submit", e => {
   e.preventDefault();
   const amount = parseAmount(document.getElementById("expAmount").value);
   if (amount === null || amount <= 0) { alert("Bitte einen gültigen Betrag eingeben, z. B. 12,50"); return; }
-  state.expenses.push({
-    id: uid(),
+  const fields = {
     date: document.getElementById("expDate").value,
     desc: document.getElementById("expDesc").value.trim(),
     amount,
     payer: document.getElementById("expPayer").value,
     category: document.getElementById("expCategory").value,
     shared: !document.getElementById("expSolo").checked
-  });
-  document.getElementById("expDesc").value = "";
-  document.getElementById("expAmount").value = "";
-  document.getElementById("expSolo").checked = false;
-  currentMonth = document.getElementById("expDate").value;
+  };
+  if (editingExpenseId) {
+    Object.assign(state.expenses.find(x => x.id === editingExpenseId), fields);
+  } else {
+    state.expenses.push(Object.assign({ id: uid() }, fields));
+  }
+  currentMonth = fields.date;
+  resetExpenseForm();
   save(); renderAll();
 });
+document.getElementById("expCancelBtn").addEventListener("click", resetExpenseForm);
 
 function renderCosts() {
   document.getElementById("monthLabel").textContent = monthName(currentMonth);
@@ -812,12 +889,30 @@ function renderExpenseTable() {
       <td><span class="badge">${esc(e.category)}</span></td>
       <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${e.shared === false ? ` <span class="badge solo">100%</span>` : ""}</span></td>
       <td class="num">${eur.format(e.amount)}</td>
-      <td><button class="icon" data-del-exp="${e.id}" title="Löschen">✕</button></td>
+      <td>
+        <button class="icon" data-edit-exp="${e.id}" title="Bearbeiten">✏️</button>
+        <button class="icon" data-del-exp="${e.id}" title="Löschen">✕</button>
+      </td>
     </tr>`).join("");
   document.getElementById("expenseTableWrap").style.display = list.length ? "" : "none";
   document.getElementById("expenseEmpty").style.display = list.length ? "none" : "";
 }
 document.getElementById("expenseTable").addEventListener("click", e => {
+  const edit = e.target.closest("[data-edit-exp]");
+  if (edit) {
+    const x = state.expenses.find(v => v.id === edit.dataset.editExp);
+    document.getElementById("expDate").value = x.date;
+    document.getElementById("expDesc").value = x.desc;
+    document.getElementById("expAmount").value = x.amount.toFixed(2).replace(".", ",");
+    document.getElementById("expPayer").value = x.payer;
+    document.getElementById("expCategory").value = x.category;
+    document.getElementById("expSolo").checked = x.shared === false;
+    editingExpenseId = x.id;
+    document.getElementById("expSubmitBtn").textContent = "Speichern";
+    document.getElementById("expCancelBtn").style.display = "";
+    document.getElementById("expDesc").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const del = e.target.closest("[data-del-exp]");
   if (del && confirm("Diesen Eintrag wirklich löschen?")) {
     state.expenses = state.expenses.filter(x => x.id !== del.dataset.delExp);
@@ -1103,23 +1198,34 @@ async function loadAgenda() {
 }
 
 /* ---------- To-dos ---------- */
-document.getElementById("todoForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.todos.push({
-    id: uid(),
-    text: document.getElementById("todoInput").value.trim(),
-    who: document.getElementById("todoWho").value,
-    date: document.getElementById("todoDate").value,
-    deadline: document.getElementById("todoDeadline").value,
-    important: document.getElementById("todoImportant").checked,
-    done: false
-  });
+let editingTodoId = null;
+function resetTodoForm() {
+  editingTodoId = null;
   document.getElementById("todoInput").value = "";
   document.getElementById("todoDate").value = "";
   document.getElementById("todoDeadline").value = "";
   document.getElementById("todoImportant").checked = false;
+  document.getElementById("todoSubmitBtn").textContent = "Hinzufügen";
+  document.getElementById("todoCancelBtn").style.display = "none";
+}
+document.getElementById("todoForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const fields = {
+    text: document.getElementById("todoInput").value.trim(),
+    who: document.getElementById("todoWho").value,
+    date: document.getElementById("todoDate").value,
+    deadline: document.getElementById("todoDeadline").value,
+    important: document.getElementById("todoImportant").checked
+  };
+  if (editingTodoId) {
+    Object.assign(state.todos.find(x => x.id === editingTodoId), fields);
+  } else {
+    state.todos.push(Object.assign({ id: uid(), done: false }, fields));
+  }
+  resetTodoForm();
   save(); renderAll();
 });
+document.getElementById("todoCancelBtn").addEventListener("click", resetTodoForm);
 function renderTodos() {
   const open = state.todos.filter(t => !t.done);
   const done = state.todos.filter(t => t.done);
@@ -1132,6 +1238,7 @@ function renderTodos() {
       <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
       ${t.date ? `<span class="badge">📅 ${fmtDate(t.date)}</span>` : ""}
       ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
+      <button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>
     </li>`;
   };
@@ -1152,6 +1259,20 @@ function renderTodos() {
 function handleTodoListClick(e) {
   const cb = e.target.closest("input[data-todo]");
   if (cb) { const t = state.todos.find(x => x.id === cb.dataset.todo); t.done = cb.checked; save(); renderAll(); return; }
+  const edit = e.target.closest("[data-edit-todo]");
+  if (edit) {
+    const t = state.todos.find(x => x.id === edit.dataset.editTodo);
+    document.getElementById("todoInput").value = t.text;
+    document.getElementById("todoWho").value = t.who;
+    document.getElementById("todoDate").value = t.date || "";
+    document.getElementById("todoDeadline").value = t.deadline || "";
+    document.getElementById("todoImportant").checked = !!t.important;
+    editingTodoId = t.id;
+    document.getElementById("todoSubmitBtn").textContent = "Speichern";
+    document.getElementById("todoCancelBtn").style.display = "";
+    document.getElementById("todoInput").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const del = e.target.closest("[data-del-todo]");
   if (del) { state.todos = state.todos.filter(x => x.id !== del.dataset.delTodo); save(); renderAll(); }
 }
@@ -1162,16 +1283,39 @@ document.getElementById("clearDoneTodos").addEventListener("click", () => {
 });
 
 /* ---------- Geschenke ---------- */
+const editingGiftId = { A: null, B: null };
+function resetGiftForm(person) {
+  editingGiftId[person] = null;
+  document.getElementById("giftInput" + person).value = "";
+  document.getElementById("giftSubmit" + person).textContent = "+";
+  document.getElementById("giftCancel" + person).style.display = "none";
+}
 function bindGiftForm(person) {
   document.getElementById("giftForm" + person).addEventListener("submit", e => {
     e.preventDefault();
     const input = document.getElementById("giftInput" + person);
-    state.gifts[person].push({ id: uid(), text: input.value.trim(), done: false });
-    input.value = ""; save(); renderAll();
+    if (editingGiftId[person]) {
+      state.gifts[person].find(x => x.id === editingGiftId[person]).text = input.value.trim();
+    } else {
+      state.gifts[person].push({ id: uid(), text: input.value.trim(), done: false });
+    }
+    resetGiftForm(person);
+    save(); renderAll();
   });
+  document.getElementById("giftCancel" + person).addEventListener("click", () => resetGiftForm(person));
   document.getElementById("giftList" + person).addEventListener("click", e => {
     const cb = e.target.closest("input[data-gift]");
     if (cb) { const g = state.gifts[person].find(x => x.id === cb.dataset.gift); g.done = cb.checked; save(); renderAll(); return; }
+    const edit = e.target.closest("[data-edit-gift]");
+    if (edit) {
+      const g = state.gifts[person].find(x => x.id === edit.dataset.editGift);
+      document.getElementById("giftInput" + person).value = g.text;
+      document.getElementById("giftInput" + person).focus();
+      editingGiftId[person] = g.id;
+      document.getElementById("giftSubmit" + person).textContent = "Speichern";
+      document.getElementById("giftCancel" + person).style.display = "";
+      return;
+    }
     const del = e.target.closest("[data-del-gift]");
     if (del) { state.gifts[person] = state.gifts[person].filter(x => x.id !== del.dataset.delGift); save(); renderAll(); }
   });
@@ -1185,21 +1329,49 @@ function renderGifts() {
       <li class="${g.done ? "done" : ""}">
         <input type="checkbox" ${g.done ? "checked" : ""} data-gift="${g.id}" title="Schon besorgt?">
         <span class="grow">${esc(g.text)}</span>
+        <button class="icon" data-edit-gift="${g.id}" title="Bearbeiten">✏️</button>
         <button class="icon" data-del-gift="${g.id}" title="Löschen">✕</button>
       </li>`).join("") || `<div class="empty">Noch keine Ideen.</div>`;
   }
 }
 
+let editingGiftOtherId = null;
+function resetGiftOthersForm() {
+  editingGiftOtherId = null;
+  document.getElementById("giftInputOthersWho").value = "";
+  document.getElementById("giftInputOthersIdea").value = "";
+  document.getElementById("giftOthersSubmitBtn").textContent = "+";
+  document.getElementById("giftOthersCancelBtn").style.display = "none";
+}
 document.getElementById("giftFormOthers").addEventListener("submit", e => {
   e.preventDefault();
   const who = document.getElementById("giftInputOthersWho");
   const idea = document.getElementById("giftInputOthersIdea");
-  state.gifts.others.push({ id: uid(), who: who.value.trim(), text: idea.value.trim(), done: false });
-  who.value = ""; idea.value = ""; save(); renderAll();
+  if (editingGiftOtherId) {
+    const g = state.gifts.others.find(x => x.id === editingGiftOtherId);
+    g.who = who.value.trim();
+    g.text = idea.value.trim();
+  } else {
+    state.gifts.others.push({ id: uid(), who: who.value.trim(), text: idea.value.trim(), done: false });
+  }
+  resetGiftOthersForm();
+  save(); renderAll();
 });
+document.getElementById("giftOthersCancelBtn").addEventListener("click", resetGiftOthersForm);
 document.getElementById("giftListOthers").addEventListener("click", e => {
   const cb = e.target.closest("input[data-gift-other]");
   if (cb) { const g = state.gifts.others.find(x => x.id === cb.dataset.giftOther); g.done = cb.checked; save(); renderAll(); return; }
+  const edit = e.target.closest("[data-edit-gift-other]");
+  if (edit) {
+    const g = state.gifts.others.find(x => x.id === edit.dataset.editGiftOther);
+    document.getElementById("giftInputOthersWho").value = g.who;
+    document.getElementById("giftInputOthersIdea").value = g.text;
+    document.getElementById("giftInputOthersWho").focus();
+    editingGiftOtherId = g.id;
+    document.getElementById("giftOthersSubmitBtn").textContent = "Speichern";
+    document.getElementById("giftOthersCancelBtn").style.display = "";
+    return;
+  }
   const del = e.target.closest("[data-del-gift-other]");
   if (del) { state.gifts.others = state.gifts.others.filter(x => x.id !== del.dataset.delGiftOther); save(); renderAll(); }
 });
@@ -1209,23 +1381,40 @@ function renderGiftsOthers() {
     <li class="${g.done ? "done" : ""}">
       <input type="checkbox" ${g.done ? "checked" : ""} data-gift-other="${g.id}" title="Schon besorgt?">
       <span class="grow"><b>${esc(g.who)}</b> — ${esc(g.text)}</span>
+      <button class="icon" data-edit-gift-other="${g.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-gift-other="${g.id}" title="Löschen">✕</button>
     </li>`).join("") || `<div class="empty">Noch keine Ideen für andere gesammelt.</div>`;
 }
 
 /* ---------- Projekte ---------- */
-document.getElementById("projectForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.projects.push({
-    id: uid(),
-    name: document.getElementById("projectName").value.trim(),
-    notes: document.getElementById("projectNotes").value.trim(),
-    items: []
-  });
+let editingProjectId = null;
+function resetProjectForm() {
+  editingProjectId = null;
   document.getElementById("projectName").value = "";
   document.getElementById("projectNotes").value = "";
+  document.getElementById("projectSubmitBtn").textContent = "Projekt anlegen";
+  document.getElementById("projectCancelBtn").style.display = "none";
+}
+document.getElementById("projectForm").addEventListener("submit", e => {
+  e.preventDefault();
+  if (editingProjectId) {
+    const p = state.projects.find(x => x.id === editingProjectId);
+    p.name = document.getElementById("projectName").value.trim();
+    p.notes = document.getElementById("projectNotes").value.trim();
+  } else {
+    state.projects.push({
+      id: uid(),
+      name: document.getElementById("projectName").value.trim(),
+      notes: document.getElementById("projectNotes").value.trim(),
+      items: []
+    });
+  }
+  resetProjectForm();
   save(); renderAll();
 });
+document.getElementById("projectCancelBtn").addEventListener("click", resetProjectForm);
+
+let editingProjectItem = null; // { pid, iid } | null
 function renderProjects() {
   const el = document.getElementById("projectList");
   el.innerHTML = state.projects.map(p => {
@@ -1236,11 +1425,19 @@ function renderProjects() {
           <li class="${i.done ? "done" : ""}">
             <input type="checkbox" ${i.done ? "checked" : ""} data-pitem="${p.id}:${i.id}">
             <span class="grow">${esc(i.text)}</span>
+            <button class="icon" data-edit-pitem="${p.id}:${i.id}" title="Bearbeiten">✏️</button>
             <button class="icon" data-del-pitem="${p.id}:${i.id}" title="Löschen">✕</button>
           </li>`;
+    const editingHere = editingProjectItem && editingProjectItem.pid === p.id;
+    const editingItem = editingHere ? p.items.find(i => i.id === editingProjectItem.iid) : null;
     return `
     <div class="project-card">
-      <h3>${esc(p.name)} <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button></h3>
+      <h3>${esc(p.name)}
+        <span>
+          <button class="icon" data-edit-project="${p.id}" title="Bearbeiten">✏️</button>
+          <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button>
+        </span>
+      </h3>
       ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
       ${p.items.length ? `
       <div style="font-size:12px; color:var(--text-muted);">${done.length} von ${p.items.length} Schritten erledigt · ${pct} %</div>
@@ -1258,8 +1455,9 @@ function renderProjects() {
         <ul class="plain">${done.map(itemRow).join("")}</ul>
       </details>` : ""}
       <form class="row" data-pform="${p.id}" style="margin-top:8px; margin-bottom:0;">
-        <input type="text" placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;" required>
-        <button class="primary" type="submit">+</button>
+        <input type="text" value="${editingItem ? esc(editingItem.text) : ""}" placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;" required>
+        <button class="primary" type="submit">${editingItem ? "Speichern" : "+"}</button>
+        ${editingItem ? `<button class="ghost" type="button" data-cancel-pitem>Abbrechen</button>` : ""}
       </form>
     </div>`;
   }).join("") || `<div class="empty">Noch keine Projekte. Legt oben euer erstes an – z. B. den nächsten Urlaub! ✈️</div>`;
@@ -1269,16 +1467,33 @@ document.getElementById("projectList").addEventListener("submit", e => {
   if (!form) return;
   e.preventDefault();
   const input = form.querySelector("input");
-  const proj = state.projects.find(p => p.id === form.dataset.pform);
-  proj.items.push({ id: uid(), text: input.value.trim(), done: false });
-  input.value = ""; save(); renderAll();
+  const pid = form.dataset.pform;
+  const proj = state.projects.find(p => p.id === pid);
+  if (editingProjectItem && editingProjectItem.pid === pid) {
+    proj.items.find(i => i.id === editingProjectItem.iid).text = input.value.trim();
+    editingProjectItem = null;
+  } else {
+    proj.items.push({ id: uid(), text: input.value.trim(), done: false });
+  }
+  save(); renderAll();
 });
 document.getElementById("projectList").addEventListener("click", e => {
+  const cancelPitem = e.target.closest("[data-cancel-pitem]");
+  if (cancelPitem) { editingProjectItem = null; renderAll(); return; }
   const cb = e.target.closest("input[data-pitem]");
   if (cb) {
     const [pid, iid] = cb.dataset.pitem.split(":");
     const item = state.projects.find(p => p.id === pid).items.find(i => i.id === iid);
     item.done = cb.checked; save(); renderAll(); return;
+  }
+  const editItem = e.target.closest("[data-edit-pitem]");
+  if (editItem) {
+    const [pid, iid] = editItem.dataset.editPitem.split(":");
+    editingProjectItem = { pid, iid };
+    renderAll();
+    const form = document.querySelector('form[data-pform="' + pid + '"]');
+    if (form) form.querySelector("input").focus();
+    return;
   }
   const delI = e.target.closest("[data-del-pitem]");
   if (delI) {
@@ -1286,6 +1501,17 @@ document.getElementById("projectList").addEventListener("click", e => {
     const proj = state.projects.find(p => p.id === pid);
     proj.items = proj.items.filter(i => i.id !== iid);
     save(); renderAll(); return;
+  }
+  const editProject = e.target.closest("[data-edit-project]");
+  if (editProject) {
+    const p = state.projects.find(x => x.id === editProject.dataset.editProject);
+    document.getElementById("projectName").value = p.name;
+    document.getElementById("projectNotes").value = p.notes;
+    editingProjectId = p.id;
+    document.getElementById("projectSubmitBtn").textContent = "Speichern";
+    document.getElementById("projectCancelBtn").style.display = "";
+    document.getElementById("projectName").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
   }
   const delP = e.target.closest("[data-del-project]");
   if (delP && confirm("Dieses Projekt mit allen Schritten löschen?")) {
