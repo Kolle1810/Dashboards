@@ -14,6 +14,7 @@
  *    damit data.json automatisch angelegt werden kann.
  */
 
+error_reporting(0); // verhindert, dass PHP-Warnungen/Hinweise die JSON-Antwort zerstören
 header('Content-Type: application/json; charset=utf-8');
 
 $API_KEY = 'BITTE-EIGENEN-SCHLUESSEL-EINTRAGEN';
@@ -27,11 +28,11 @@ function respond($code, $data) {
 }
 
 if (strlen($API_KEY) < 8) {
-    respond(500, ['error' => 'server_not_configured', 'hint' => 'Bitte in api.php einen eigenen API_KEY eintragen (mindestens 8 Zeichen).']);
+    respond(500, array('error' => 'server_not_configured', 'hint' => 'Bitte in api.php einen eigenen API_KEY eintragen (mindestens 8 Zeichen).'));
 }
-$providedKey = $_SERVER['HTTP_X_API_KEY'] ?? '';
+$providedKey = isset($_SERVER['HTTP_X_API_KEY']) ? $_SERVER['HTTP_X_API_KEY'] : '';
 if (!hash_equals($API_KEY, $providedKey)) {
-    respond(401, ['error' => 'invalid_key']);
+    respond(401, array('error' => 'invalid_key'));
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -50,13 +51,13 @@ if ($method === 'POST') {
     $raw = file_get_contents('php://input');
     $decoded = json_decode($raw);
     if ($decoded === null && trim($raw) !== 'null') {
-        respond(400, ['error' => 'invalid_json']);
+        respond(400, array('error' => 'invalid_json'));
     }
     $ok = file_put_contents($DATA_FILE, $raw, LOCK_EX);
     if ($ok === false) {
-        respond(500, ['error' => 'write_failed']);
+        respond(500, array('error' => 'write_failed'));
     }
-    respond(200, ['ok' => true]);
+    respond(200, array('ok' => true));
 }
 
-respond(405, ['error' => 'method_not_allowed']);
+respond(405, array('error' => 'method_not_allowed'));
