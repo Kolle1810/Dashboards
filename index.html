@@ -269,8 +269,6 @@
       <h2>Ausgabe eintragen</h2>
       <p class="hint">Tragt ein, wer was bezahlt hat. Das Dashboard rechnet automatisch aus, wer wem etwas schuldet (50/50).</p>
 
-      <div id="expenseTemplates" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
-
       <form class="row" id="expenseForm">
         <input type="month" id="expDate" required>
         <input type="text" id="expDesc" placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;" required>
@@ -291,10 +289,28 @@
         <input type="checkbox" id="expSolo">
         Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
       </label>
-      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
-        <input type="checkbox" id="expSaveTemplate">
-        🔁 Als wiederkehrende Vorlage merken (z. B. Strom, Miete)
-      </label>
+    </div>
+
+    <div class="card">
+      <h2>🔁 Fixkosten</h2>
+      <p class="hint">Einmal hinterlegt, werden diese Kosten automatisch jeden Monat als Ausgabe eingetragen – bis ihr sie hier wieder entfernt.</p>
+
+      <form class="row" id="fixedCostForm">
+        <input type="text" id="fcDesc" placeholder="Beschreibung, z. B. „Miete“" style="flex:1; min-width:180px;" required>
+        <input type="text" id="fcAmount" placeholder="Betrag in €" style="width:110px;" required inputmode="decimal">
+        <select id="fcPayer"></select>
+        <select id="fcCategory">
+          <option>Lebensmittel</option>
+          <option>Wohnen</option>
+          <option>Freizeit</option>
+          <option>Restaurant</option>
+          <option>Reisen</option>
+          <option>Sonstiges</option>
+        </select>
+        <button class="primary" type="submit" id="fcSubmitBtn">Hinzufügen</button>
+        <button class="ghost" type="button" id="fcCancelBtn" style="display:none;">Abbrechen</button>
+      </form>
+      <ul class="plain" id="fixedCostList" style="margin-top:12px;"></ul>
     </div>
 
     <div class="card">
@@ -556,8 +572,8 @@ const defaultState = () => ({
   settings: { nameA: "Kolja", nameB: "Carina", calendarIdA: "", calendarIdB: "", googleClientId: "", apiKey: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
-  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
-  expenseTemplates: [], // {id, desc, amount, payer:'A'|'B', category} - wiederkehrende Ausgaben
+  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared, fixedCostId?}
+  fixedCosts: [],  // {id, desc, amount, payer:'A'|'B', category} - wird automatisch jeden Monat als Ausgabe eingetragen
   todos: [],       // {id, text, who:'A'|'B'|'both', date, deadline, important, done}
   gifts: { A: [], B: [], others: [] }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
@@ -869,7 +885,6 @@ function resetExpenseForm() {
   document.getElementById("expDesc").value = "";
   document.getElementById("expAmount").value = "";
   document.getElementById("expSolo").checked = false;
-  document.getElementById("expSaveTemplate").checked = false;
   document.getElementById("expDate").value = currentMonth;
   document.getElementById("expSubmitBtn").textContent = "Eintragen";
   document.getElementById("expCancelBtn").style.display = "none";
@@ -891,48 +906,88 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
   } else {
     state.expenses.push(Object.assign({ id: uid() }, fields));
   }
-  if (document.getElementById("expSaveTemplate").checked) {
-    const tplFields = { desc: fields.desc, amount: fields.amount, payer: fields.payer, category: fields.category };
-    const existingTpl = state.expenseTemplates.find(t => t.desc.toLowerCase() === tplFields.desc.toLowerCase());
-    if (existingTpl) { Object.assign(existingTpl, tplFields); }
-    else { state.expenseTemplates.push(Object.assign({ id: uid() }, tplFields)); }
-  }
   currentMonth = fields.date;
   resetExpenseForm();
   save(); renderAll();
 });
 document.getElementById("expCancelBtn").addEventListener("click", resetExpenseForm);
 
-function renderExpenseTemplates() {
-  const el = document.getElementById("expenseTemplates");
-  el.innerHTML = state.expenseTemplates.map(t => `
-    <span style="display:inline-flex; align-items:center; gap:2px;">
-      <button class="ghost" type="button" data-use-template="${t.id}">🔁 ${esc(t.desc)} · ${eur.format(t.amount)} · ${esc(nameOf(t.payer))}</button>
-      <button class="icon" data-del-template="${t.id}" title="Vorlage löschen">✕</button>
-    </span>`).join("");
+let editingFixedCostId = null;
+function resetFixedCostForm() {
+  editingFixedCostId = null;
+  document.getElementById("fcDesc").value = "";
+  document.getElementById("fcAmount").value = "";
+  document.getElementById("fcSubmitBtn").textContent = "Hinzufügen";
+  document.getElementById("fcCancelBtn").style.display = "none";
 }
-document.getElementById("expenseTemplates").addEventListener("click", e => {
-  const use = e.target.closest("[data-use-template]");
-  if (use) {
-    const t = state.expenseTemplates.find(x => x.id === use.dataset.useTemplate);
-    document.getElementById("expDate").value = currentMonth;
-    document.getElementById("expDesc").value = t.desc;
-    document.getElementById("expAmount").value = t.amount.toFixed(2).replace(".", ",");
-    document.getElementById("expPayer").value = t.payer;
-    document.getElementById("expCategory").value = t.category;
-    document.getElementById("expAmount").focus();
-    document.getElementById("expAmount").select();
+document.getElementById("fixedCostForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const amount = parseAmount(document.getElementById("fcAmount").value);
+  if (amount === null || amount <= 0) { alert("Bitte einen gültigen Betrag eingeben, z. B. 12,50"); return; }
+  const fields = {
+    desc: document.getElementById("fcDesc").value.trim(),
+    amount,
+    payer: document.getElementById("fcPayer").value,
+    category: document.getElementById("fcCategory").value
+  };
+  if (editingFixedCostId) {
+    Object.assign(state.fixedCosts.find(x => x.id === editingFixedCostId), fields);
+  } else {
+    state.fixedCosts.push(Object.assign({ id: uid() }, fields));
+  }
+  resetFixedCostForm();
+  save(); renderAll();
+});
+document.getElementById("fcCancelBtn").addEventListener("click", resetFixedCostForm);
+
+function renderFixedCostList() {
+  const el = document.getElementById("fixedCostList");
+  el.innerHTML = state.fixedCosts.map(fc => `
+    <li>
+      <span class="who-dot who-${fc.payer.toLowerCase()}" title="${esc(nameOf(fc.payer))}"></span>
+      <span class="grow">${esc(fc.desc)} <span style="color:var(--text-muted); font-size:12px;">(${esc(fc.category)})</span></span>
+      <span class="badge">${eur.format(fc.amount)}</span>
+      <button class="icon" data-edit-fc="${fc.id}" title="Bearbeiten">✏️</button>
+      <button class="icon" data-del-fc="${fc.id}" title="Entfernen">✕</button>
+    </li>`).join("") || `<div class="empty">Noch keine Fixkosten hinterlegt.</div>`;
+}
+document.getElementById("fixedCostList").addEventListener("click", e => {
+  const edit = e.target.closest("[data-edit-fc]");
+  if (edit) {
+    const fc = state.fixedCosts.find(x => x.id === edit.dataset.editFc);
+    document.getElementById("fcDesc").value = fc.desc;
+    document.getElementById("fcAmount").value = fc.amount.toFixed(2).replace(".", ",");
+    document.getElementById("fcPayer").value = fc.payer;
+    document.getElementById("fcCategory").value = fc.category;
+    editingFixedCostId = fc.id;
+    document.getElementById("fcSubmitBtn").textContent = "Speichern";
+    document.getElementById("fcCancelBtn").style.display = "";
+    document.getElementById("fcDesc").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  const del = e.target.closest("[data-del-template]");
-  if (del && confirm("Diese Vorlage wirklich löschen? (Bereits erfasste Ausgaben bleiben erhalten.)")) {
-    state.expenseTemplates = state.expenseTemplates.filter(x => x.id !== del.dataset.delTemplate);
+  const del = e.target.closest("[data-del-fc]");
+  if (del && confirm("Diese Fixkosten wirklich entfernen? Bereits eingetragene Monate bleiben erhalten, es kommen nur keine neuen mehr automatisch dazu.")) {
+    state.fixedCosts = state.fixedCosts.filter(x => x.id !== del.dataset.delFc);
     save(); renderAll();
   }
 });
 
+// Trägt alle hinterlegten Fixkosten, die für den jeweiligen Monat noch fehlen, automatisch als Ausgabe ein.
+function materializeFixedCosts(ym) {
+  let added = false;
+  state.fixedCosts.forEach(fc => {
+    const exists = state.expenses.some(e => e.fixedCostId === fc.id && e.date === ym);
+    if (!exists) {
+      state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, shared: true, fixedCostId: fc.id });
+      added = true;
+    }
+  });
+  if (added) save();
+}
+
 function renderCosts() {
-  renderExpenseTemplates();
+  materializeFixedCosts(currentMonth);
+  renderFixedCostList();
   document.getElementById("monthLabel").textContent = monthName(currentMonth);
   const { total, totalA, totalB, sharedTotal, sharedTotalA, soloCount } = monthTotals(currentMonth);
   document.getElementById("costTotal").textContent = eur.format(total);
@@ -962,7 +1017,7 @@ function renderExpenseTable() {
   const tbody = document.getElementById("expenseTable");
   tbody.innerHTML = list.map(e => `
     <tr>
-      <td>${esc(e.desc)}</td>
+      <td>${esc(e.desc)}${e.fixedCostId ? ` <span class="badge" title="Automatisch aus Fixkosten eingetragen">🔁</span>` : ""}</td>
       <td><span class="badge">${esc(e.category)}</span></td>
       <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${e.shared === false ? ` <span class="badge solo">100%</span>` : ""}</span></td>
       <td class="num">${eur.format(e.amount)}</td>
@@ -1670,10 +1725,9 @@ document.getElementById("demoBtn").addEventListener("click", () => {
   state.expenses.push(
     { id: uid(), date: m, desc: "Wocheneinkauf", amount: 87.40, payer: "A", category: "Lebensmittel" },
     { id: uid(), date: m, desc: "Kinoabend", amount: 32.00, payer: "B", category: "Freizeit" },
-    { id: uid(), date: m, desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
     { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" },
     { id: uid(), date: m, desc: "Neues Fahrrad (nur für mich)", amount: 210.00, payer: "A", category: "Sonstiges", shared: false });
-  state.expenseTemplates.push(
+  state.fixedCosts.push(
     { id: uid(), desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
     { id: uid(), desc: "Miete", amount: 850.00, payer: "A", category: "Wohnen" });
   const inTwoDays = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
@@ -1698,6 +1752,7 @@ document.getElementById("demoBtn").addEventListener("click", () => {
 function fillSelects() {
   const payerHtml = `<option value="A">${esc(state.settings.nameA)}</option><option value="B">${esc(state.settings.nameB)}</option>`;
   document.getElementById("expPayer").innerHTML = payerHtml;
+  document.getElementById("fcPayer").innerHTML = payerHtml;
   document.getElementById("todoWho").innerHTML = payerHtml + `<option value="both">Beide</option>`;
   document.getElementById("nameA").value = state.settings.nameA;
   document.getElementById("nameB").value = state.settings.nameB;
