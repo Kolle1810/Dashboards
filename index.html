@@ -15,7 +15,7 @@
     --text-muted:     #898781;
     --grid:           #f5dee2;
     --baseline:       #e3b8c3;
-    --border:         rgba(140,50,75,0.16);
+    --border:         rgba(22,54,81,0.22);
     --series-a:       #2a78d6;   /* Kolja – Blau */
     --series-b:       #e87ba4;   /* Carina – Rosa */
     --base:           #f3bfc9;   /* Blush Pink */
@@ -54,7 +54,6 @@
     margin: 0 auto;
   }
   .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--base-ink); }
-  .app-title small { font-weight: 400; color: var(--base-ink); opacity: 0.75; font-size: 13px; margin-left: 8px; }
   nav {
     display: flex; gap: 4px; max-width: 1000px; margin: 12px auto 0;
     overflow-x: auto;
@@ -199,7 +198,7 @@
 
 <header>
   <div class="header-row">
-    <h1 class="app-title">💑 Unser Dashboard <small id="headerNames"></small></h1>
+    <h1 class="app-title">💑 Unser Dashboard</h1>
   </div>
   <nav id="mainNav">
     <button data-tab="overview" class="active">Übersicht</button>
@@ -661,8 +660,6 @@ function renderOverview() {
   document.getElementById("ovTopics").innerHTML = topics.length
     ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
     : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
-
-  document.getElementById("headerNames").textContent = state.settings.nameA + " & " + state.settings.nameB;
 }
 
 /* ---------- Meetings ---------- */
