@@ -214,22 +214,15 @@
 
   <!-- ÜBERSICHT -->
   <section class="tab active" id="tab-overview">
-    <div class="tile-grid">
-      <div class="tile hero">
-        <div class="label">Ausgaben diesen Monat</div>
-        <div class="value" id="ovMonthTotal">–</div>
-        <div class="sub" id="ovMonthName"></div>
-      </div>
-      <div class="tile">
-        <div class="label">Kontostand zwischen euch</div>
-        <div class="value" id="ovSaldo" style="font-size:22px;">–</div>
-        <div class="sub">bei 50/50-Aufteilung</div>
-      </div>
-      <div class="tile">
-        <div class="label">Offene To-dos diese Woche</div>
-        <div class="value" id="ovTodos">–</div>
-        <div class="sub" id="ovTodosSub"></div>
-      </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px;">✨ Euer Spruch für heute</div>
+      <div id="dailyQuote" style="font-size:18px; font-style:italic;"></div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Bevorstehende To-dos</h2>
+      <p class="hint">Was als Nächstes ansteht.</p>
+      <ul class="plain" id="ovTodoList"></ul>
     </div>
 
     <div class="card">
@@ -664,21 +657,62 @@ document.getElementById("mainNav").addEventListener("click", e => {
 });
 
 /* ---------- Übersicht ---------- */
+const DAILY_QUOTES = [
+  "Kleine Gesten, große Liebe – heute ist ein guter Tag, das zu zeigen.",
+  "Ihr zwei seid ein ziemlich gutes Team.",
+  "Lächle – jemand hat heute schon an dich gedacht.",
+  "Das Leben ist schöner, wenn man es teilt.",
+  "Heute ist ein guter Tag für eine Umarmung.",
+  "Dankbarkeit macht den Tag leichter – wofür seid ihr heute dankbar?",
+  "Gemeinsam schafft man mehr als allein.",
+  "Ein Lächeln kostet nichts und bewirkt viel.",
+  "Die kleinen Momente sind oft die größten.",
+  "Ihr seid euer eigenes Zuhause, egal wo ihr seid.",
+  "Heute ist ein perfekter Tag, um „Danke“ zu sagen.",
+  "Liebe zeigt sich selten laut – meistens ganz leise.",
+  "Ein guter Tag beginnt mit einem guten Gedanken.",
+  "Nehmt euch heute fünf Minuten nur füreinander.",
+  "Zusammen ist man weniger allein mit allem.",
+  "Auch chaotische Tage werden schöner zu zweit.",
+  "Ihr müsst nicht perfekt sein – nur füreinander da.",
+  "Ein Kompliment am Morgen hält den ganzen Tag.",
+  "Das Beste kommt oft unerwartet.",
+  "Heute ist ein guter Tag, um stolz aufeinander zu sein.",
+  "Liebe ist, wenn man auch die Steuererklärung zusammen übersteht.",
+  "Manchmal ist Zuhören das schönste Geschenk.",
+  "Ihr seid ein gutes Team – erinnert euch heute daran.",
+  "Ein bisschen Humor rettet fast jeden Tag.",
+  "Freut euch auf die kleinen Dinge – ein Kaffee, ein Lachen, ein Blick.",
+  "Auch stille Tage können gute Tage sein.",
+  "Was auch passiert – ihr steht das gemeinsam durch.",
+  "Ein „Ich hab an dich gedacht“ verändert manchmal alles.",
+  "Sagt euch heute, was ihr aneinander schätzt.",
+  "Die Liebe steckt oft im Detail – im Kaffee, der schon fertig ist, wenn du aufstehst."
+];
+function getDailyQuote() {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  return DAILY_QUOTES[dayIndex % DAILY_QUOTES.length];
+}
+function todoUrgencySort(a, b) {
+  if (a.important !== b.important) return a.important ? -1 : 1;
+  const ad = a.deadline || "9999-99-99";
+  const bd = b.deadline || "9999-99-99";
+  return ad < bd ? -1 : ad > bd ? 1 : 0;
+}
 function renderOverview() {
-  const { total, sharedTotal, sharedTotalA } = monthTotals(currentMonth);
-  document.getElementById("ovMonthTotal").textContent = eur.format(total);
-  document.getElementById("ovMonthName").textContent = monthName(currentMonth);
-  document.getElementById("ovSaldo").innerHTML = saldoText(sharedTotal, sharedTotalA);
+  document.getElementById("dailyQuote").textContent = "„" + getDailyQuote() + "“";
 
-  const open = state.todos.filter(t => !t.done).length;
-  document.getElementById("ovTodos").textContent = open;
-  document.getElementById("ovTodosSub").textContent = open === 0 ? "Alles erledigt! 🎉" : "noch zu erledigen";
+  const upcoming = state.todos.filter(t => !t.done).sort(todoUrgencySort).slice(0, 6);
+  document.getElementById("ovTodoList").innerHTML = upcoming.length
+    ? upcoming.map(t => todoRow(t, { compact: true })).join("")
+    : `<li><span class="empty">Alles erledigt! 🎉</span></li>`;
 
   const topics = state.topics.filter(t => !t.done).slice(0, 6);
   document.getElementById("ovTopics").innerHTML = topics.length
     ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
     : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
 }
+document.getElementById("ovTodoList").addEventListener("click", handleTodoListClick);
 
 /* ---------- Meetings ---------- */
 let editingTopicId = null;
@@ -1226,22 +1260,23 @@ document.getElementById("todoForm").addEventListener("submit", e => {
   save(); renderAll();
 });
 document.getElementById("todoCancelBtn").addEventListener("click", resetTodoForm);
-function renderTodos() {
-  const open = state.todos.filter(t => !t.done);
-  const done = state.todos.filter(t => t.done);
-  const todoRow = t => {
-    const overdue = !t.done && t.deadline && t.deadline < todayStr();
-    return `
+function todoRow(t, opts) {
+  opts = opts || {};
+  const overdue = !t.done && t.deadline && t.deadline < todayStr();
+  return `
     <li class="${t.done ? "done" : ""}">
       <input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
       <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>
       <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
       ${t.date ? `<span class="badge">📅 ${fmtDate(t.date)}</span>` : ""}
       ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
-      <button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
-      <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>
+      ${opts.compact ? "" : `<button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
+      <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>`}
     </li>`;
-  };
+}
+function renderTodos() {
+  const open = state.todos.filter(t => !t.done);
+  const done = state.todos.filter(t => t.done);
 
   document.getElementById("todoList").innerHTML = state.todos.length === 0
     ? `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`
