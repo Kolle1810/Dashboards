@@ -419,6 +419,7 @@
         <button class="primary" type="submit">Hinzufügen</button>
       </form>
       <ul class="plain" id="todoList" style="margin-top:12px;"></ul>
+      <div id="todoArchive"></div>
       <div style="margin-top:12px;">
         <button class="ghost" id="clearDoneTodos">✔ Erledigte aufräumen</button>
       </div>
@@ -1120,7 +1121,9 @@ document.getElementById("todoForm").addEventListener("submit", e => {
   save(); renderAll();
 });
 function renderTodos() {
-  document.getElementById("todoList").innerHTML = state.todos.map(t => {
+  const open = state.todos.filter(t => !t.done);
+  const done = state.todos.filter(t => t.done);
+  const todoRow = t => {
     const overdue = !t.done && t.deadline && t.deadline < todayStr();
     return `
     <li class="${t.done ? "done" : ""}">
@@ -1131,14 +1134,29 @@ function renderTodos() {
       ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
       <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>
     </li>`;
-  }).join("") || `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`;
+  };
+
+  document.getElementById("todoList").innerHTML = state.todos.length === 0
+    ? `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`
+    : open.length
+      ? open.map(todoRow).join("")
+      : `<div class="empty">Alle Aufgaben erledigt! 🎉</div>`;
+
+  document.getElementById("todoArchive").innerHTML = done.length
+    ? `<details class="archive">
+        <summary>✔ ${done.length} erledigt${done.length > 1 ? "e" : ""} Aufgabe${done.length > 1 ? "n" : ""} anzeigen</summary>
+        <ul class="plain">${done.map(todoRow).join("")}</ul>
+      </details>`
+    : "";
 }
-document.getElementById("todoList").addEventListener("click", e => {
+function handleTodoListClick(e) {
   const cb = e.target.closest("input[data-todo]");
   if (cb) { const t = state.todos.find(x => x.id === cb.dataset.todo); t.done = cb.checked; save(); renderAll(); return; }
   const del = e.target.closest("[data-del-todo]");
   if (del) { state.todos = state.todos.filter(x => x.id !== del.dataset.delTodo); save(); renderAll(); }
-});
+}
+document.getElementById("todoList").addEventListener("click", handleTodoListClick);
+document.getElementById("todoArchive").addEventListener("click", handleTodoListClick);
 document.getElementById("clearDoneTodos").addEventListener("click", () => {
   state.todos = state.todos.filter(t => !t.done); save(); renderAll();
 });
