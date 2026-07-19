@@ -658,36 +658,36 @@ document.getElementById("mainNav").addEventListener("click", e => {
 
 /* ---------- Übersicht ---------- */
 const DAILY_QUOTES = [
-  "Kleine Gesten, große Liebe – heute ist ein guter Tag, das zu zeigen.",
-  "Ihr zwei seid ein ziemlich gutes Team.",
-  "Lächle – jemand hat heute schon an dich gedacht.",
-  "Das Leben ist schöner, wenn man es teilt.",
-  "Heute ist ein guter Tag für eine Umarmung.",
-  "Dankbarkeit macht den Tag leichter – wofür seid ihr heute dankbar?",
-  "Gemeinsam schafft man mehr als allein.",
-  "Ein Lächeln kostet nichts und bewirkt viel.",
-  "Die kleinen Momente sind oft die größten.",
-  "Ihr seid euer eigenes Zuhause, egal wo ihr seid.",
-  "Heute ist ein perfekter Tag, um „Danke“ zu sagen.",
-  "Liebe zeigt sich selten laut – meistens ganz leise.",
-  "Ein guter Tag beginnt mit einem guten Gedanken.",
-  "Nehmt euch heute fünf Minuten nur füreinander.",
-  "Zusammen ist man weniger allein mit allem.",
-  "Auch chaotische Tage werden schöner zu zweit.",
-  "Ihr müsst nicht perfekt sein – nur füreinander da.",
-  "Ein Kompliment am Morgen hält den ganzen Tag.",
-  "Das Beste kommt oft unerwartet.",
-  "Heute ist ein guter Tag, um stolz aufeinander zu sein.",
-  "Liebe ist, wenn man auch die Steuererklärung zusammen übersteht.",
-  "Manchmal ist Zuhören das schönste Geschenk.",
-  "Ihr seid ein gutes Team – erinnert euch heute daran.",
-  "Ein bisschen Humor rettet fast jeden Tag.",
-  "Freut euch auf die kleinen Dinge – ein Kaffee, ein Lachen, ein Blick.",
-  "Auch stille Tage können gute Tage sein.",
-  "Was auch passiert – ihr steht das gemeinsam durch.",
-  "Ein „Ich hab an dich gedacht“ verändert manchmal alles.",
-  "Sagt euch heute, was ihr aneinander schätzt.",
-  "Die Liebe steckt oft im Detail – im Kaffee, der schon fertig ist, wenn du aufstehst."
+  "Du bist genug, so wie du bist.",
+  "Du darfst stolz auf dich sein – auch für die kleinen Dinge.",
+  "Deine Gefühle sind gültig, auch wenn sie niemand sieht.",
+  "Du machst das besser, als du denkst.",
+  "Es ist okay, heute nicht perfekt zu sein.",
+  "Du verdienst genauso viel Freundlichkeit, wie du anderen gibst.",
+  "Dein Bestes reicht – heute und jeden Tag.",
+  "Du darfst auch mal nichts leisten müssen.",
+  "Sei heute ein bisschen netter zu dir selbst.",
+  "Du hast schon so viel geschafft, worauf du stolz sein kannst.",
+  "Fehler machen dich nicht weniger wertvoll.",
+  "Du bist mehr als deine To-do-Liste.",
+  "Niemand ist perfekt – und das ist völlig in Ordnung.",
+  "Du darfst auch mal „Nein“ sagen.",
+  "Deine Stärke zeigt sich auch in ruhigen Momenten.",
+  "Vertrau dir selbst – du weißt mehr, als du glaubst.",
+  "Du musst niemandem etwas beweisen.",
+  "Du bist wertvoll, unabhängig davon, was du heute schaffst.",
+  "Gönn dir heute eine Pause, ohne schlechtes Gewissen.",
+  "Du wächst an jedem Tag, auch wenn du es nicht merkst.",
+  "Es ist mutig, auf sich selbst zu achten.",
+  "Du darfst stolz auf deinen eigenen Weg sein.",
+  "Selbstfürsorge ist kein Luxus, sondern verdient.",
+  "Du bist gut genug – nicht trotz, sondern mit allem, was du bist.",
+  "Kleine Fortschritte zählen genauso wie große.",
+  "Du hast das Recht, auf dich selbst stolz zu sein.",
+  "Sei geduldig mit dir – du gibst dein Bestes.",
+  "Dein Wert hängt nicht von deiner Leistung ab.",
+  "Du darfst Raum einnehmen, genau so, wie du bist.",
+  "Heute ist ein guter Tag, um freundlich mit dir selbst zu sein."
 ];
 function getDailyQuote() {
   const dayIndex = Math.floor(Date.now() / 86400000);
@@ -704,7 +704,7 @@ function renderOverview() {
 
   const upcoming = state.todos.filter(t => !t.done).sort(todoUrgencySort).slice(0, 6);
   document.getElementById("ovTodoList").innerHTML = upcoming.length
-    ? upcoming.map(t => todoRow(t, { compact: true })).join("")
+    ? upcoming.map(t => todoRow(t, { readonly: true })).join("")
     : `<li><span class="empty">Alles erledigt! 🎉</span></li>`;
 
   const topics = state.topics.filter(t => !t.done).slice(0, 6);
@@ -712,7 +712,6 @@ function renderOverview() {
     ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
     : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
 }
-document.getElementById("ovTodoList").addEventListener("click", handleTodoListClick);
 
 /* ---------- Meetings ---------- */
 let editingTopicId = null;
@@ -1265,12 +1264,14 @@ function todoRow(t, opts) {
   const overdue = !t.done && t.deadline && t.deadline < todayStr();
   return `
     <li class="${t.done ? "done" : ""}">
-      <input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
-      <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>
+      ${opts.readonly
+        ? `<span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>`
+        : `<input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
+      <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>`}
       <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
       ${t.date ? `<span class="badge">📅 ${fmtDate(t.date)}</span>` : ""}
       ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
-      ${opts.compact ? "" : `<button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
+      ${opts.readonly ? "" : opts.compact ? "" : `<button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>`}
     </li>`;
 }
