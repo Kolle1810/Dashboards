@@ -20,15 +20,18 @@ Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
 - `index.html` – das komplette Dashboard (Oberfläche + Logik)
 - `api.php` – kleines Backend, das die Daten zentral in `data.json` auf dem NAS speichert
 - `data.json` – wird beim ersten Speichern automatisch angelegt, enthält eure echten Daten (**nicht** Teil von Git, siehe `.gitignore`)
+- `manifest.json` + `icons/` – sorgen für ein eigenes Logo, wenn ihr das Dashboard auf dem Homebildschirm platziert
 
 ## Einrichtung auf dem QNAP-NAS
 
 1. **Web Station** auf dem NAS aktivieren (Control Panel → Applications → Web Station), PHP-Unterstützung ist dabei standardmäßig enthalten.
-2. `index.html` und `api.php` in denselben Ordner legen – z. B. den „Web“-Ordner von Web Station.
+2. `index.html`, `api.php`, `manifest.json` und den Ordner `icons/` (mit allen Dateien darin) in denselben Ordner legen – z. B. den „Web“-Ordner von Web Station.
 3. Sicherstellen, dass dieser Ordner für den Webserver **beschreibbar** ist, damit `data.json` automatisch angelegt werden kann (Berechtigungen ggf. in File Station anpassen).
 4. `api.php` öffnen und bei `$API_KEY` einen eigenen, frei erfundenen Schlüssel eintragen (z. B. ein langes zufälliges Wort). Diese Bearbeitung nur direkt auf dem NAS vornehmen, nicht zurück nach GitHub pushen.
 5. Das Dashboard im Browser öffnen, unter **⚙️ Einstellungen → „Geräteübergreifende Synchronisierung“** denselben Schlüssel eintragen.
 6. Fertig – ab jetzt sehen alle Geräte, die dieselbe NAS-Adresse mit demselben Schlüssel nutzen, automatisch dieselben Daten.
+
+**Logo auf dem Homebildschirm:** Öffnet das Dashboard im Browser eures Handys und wählt „Zum Home-Bildschirm hinzufügen“ (iPhone/Safari: Teilen-Symbol → „Zum Home-Bildschirm“; Android/Chrome: Menü ⋮ → „Zum Startbildschirm hinzufügen“ bzw. „App installieren“). Es erscheint dann automatisch das 💑-Logo als Icon, und die Seite öffnet sich beim Antippen ohne Adressleiste wie eine echte App.
 
 **Zugriff von unterwegs:** Am einfachsten ist eine **https-Adresse**, die auch von zuhause funktioniert (z. B. über euren NAS-Fernzugriff oder – bei rein lokalem Zugriff per VPN – über einen Dienst wie `nip.io`, der eure lokale IP in einen gültigen Domainnamen verpackt, z. B. `https://192.168.178.42.nip.io:8081`). Details dazu gerne im Chat nachlesen, falls ihr das noch mal nachschlagen wollt.
 
