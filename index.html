@@ -268,6 +268,9 @@
     <div class="card">
       <h2>Ausgabe eintragen</h2>
       <p class="hint">Tragt ein, wer was bezahlt hat. Das Dashboard rechnet automatisch aus, wer wem etwas schuldet (50/50).</p>
+
+      <div id="expenseTemplates" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+
       <form class="row" id="expenseForm">
         <input type="month" id="expDate" required>
         <input type="text" id="expDesc" placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;" required>
@@ -287,6 +290,10 @@
       <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
         <input type="checkbox" id="expSolo">
         Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
+      </label>
+      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
+        <input type="checkbox" id="expSaveTemplate">
+        🔁 Als wiederkehrende Vorlage merken (z. B. Strom, Miete)
       </label>
     </div>
 
@@ -550,6 +557,7 @@ const defaultState = () => ({
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
+  expenseTemplates: [], // {id, desc, amount, payer:'A'|'B', category} - wiederkehrende Ausgaben
   todos: [],       // {id, text, who:'A'|'B'|'both', date, deadline, important, done}
   gifts: { A: [], B: [], others: [] }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
@@ -861,6 +869,7 @@ function resetExpenseForm() {
   document.getElementById("expDesc").value = "";
   document.getElementById("expAmount").value = "";
   document.getElementById("expSolo").checked = false;
+  document.getElementById("expSaveTemplate").checked = false;
   document.getElementById("expDate").value = currentMonth;
   document.getElementById("expSubmitBtn").textContent = "Eintragen";
   document.getElementById("expCancelBtn").style.display = "none";
@@ -882,13 +891,48 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
   } else {
     state.expenses.push(Object.assign({ id: uid() }, fields));
   }
+  if (document.getElementById("expSaveTemplate").checked) {
+    const tplFields = { desc: fields.desc, amount: fields.amount, payer: fields.payer, category: fields.category };
+    const existingTpl = state.expenseTemplates.find(t => t.desc.toLowerCase() === tplFields.desc.toLowerCase());
+    if (existingTpl) { Object.assign(existingTpl, tplFields); }
+    else { state.expenseTemplates.push(Object.assign({ id: uid() }, tplFields)); }
+  }
   currentMonth = fields.date;
   resetExpenseForm();
   save(); renderAll();
 });
 document.getElementById("expCancelBtn").addEventListener("click", resetExpenseForm);
 
+function renderExpenseTemplates() {
+  const el = document.getElementById("expenseTemplates");
+  el.innerHTML = state.expenseTemplates.map(t => `
+    <span style="display:inline-flex; align-items:center; gap:2px;">
+      <button class="ghost" type="button" data-use-template="${t.id}">🔁 ${esc(t.desc)} · ${eur.format(t.amount)} · ${esc(nameOf(t.payer))}</button>
+      <button class="icon" data-del-template="${t.id}" title="Vorlage löschen">✕</button>
+    </span>`).join("");
+}
+document.getElementById("expenseTemplates").addEventListener("click", e => {
+  const use = e.target.closest("[data-use-template]");
+  if (use) {
+    const t = state.expenseTemplates.find(x => x.id === use.dataset.useTemplate);
+    document.getElementById("expDate").value = currentMonth;
+    document.getElementById("expDesc").value = t.desc;
+    document.getElementById("expAmount").value = t.amount.toFixed(2).replace(".", ",");
+    document.getElementById("expPayer").value = t.payer;
+    document.getElementById("expCategory").value = t.category;
+    document.getElementById("expAmount").focus();
+    document.getElementById("expAmount").select();
+    return;
+  }
+  const del = e.target.closest("[data-del-template]");
+  if (del && confirm("Diese Vorlage wirklich löschen? (Bereits erfasste Ausgaben bleiben erhalten.)")) {
+    state.expenseTemplates = state.expenseTemplates.filter(x => x.id !== del.dataset.delTemplate);
+    save(); renderAll();
+  }
+});
+
 function renderCosts() {
+  renderExpenseTemplates();
   document.getElementById("monthLabel").textContent = monthName(currentMonth);
   const { total, totalA, totalB, sharedTotal, sharedTotalA, soloCount } = monthTotals(currentMonth);
   document.getElementById("costTotal").textContent = eur.format(total);
@@ -1629,6 +1673,9 @@ document.getElementById("demoBtn").addEventListener("click", () => {
     { id: uid(), date: m, desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
     { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" },
     { id: uid(), date: m, desc: "Neues Fahrrad (nur für mich)", amount: 210.00, payer: "A", category: "Sonstiges", shared: false });
+  state.expenseTemplates.push(
+    { id: uid(), desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
+    { id: uid(), desc: "Miete", amount: 850.00, payer: "A", category: "Wohnen" });
   const inTwoDays = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   state.todos.push(
