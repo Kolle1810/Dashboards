@@ -1,4 +1,4 @@
-# 💑 Unser Dashboard
+# 💑 Bürokratie der Liebe
 
 Ein gemeinsames Dashboard für zwei, gehostet auf eurem eigenen QNAP-NAS.
 Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
@@ -11,8 +11,8 @@ Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
 | **Meetings** | Themenliste fürs nächste Paar-Meeting + Protokolle vergangener Meetings |
 | **Kosten** | Ausgaben eintragen (wer hat bezahlt?, ggf. „nicht teilen“), Monatsübersicht mit Diagramm und automatischer 50/50-Abrechnung |
 | **Kalender** | Google-Login mit gemeinsamer Terminliste beider Kalender direkt im Dashboard, plus zwei Buttons zum direkten Öffnen als Rückfalloption |
-| **To-dos** | Wochenaufgaben mit Zuordnung (wer macht's?) zum Abhaken |
-| **Geschenke** | Eure eigene Wunschliste (versteckbar) + eine dritte Liste für Geschenkideen für andere |
+| **To-dos** | Wochenaufgaben mit Zuordnung (wer macht's?), Datum, Frist und „sehr wichtig“-Markierung zum Abhaken |
+| **Wunschlisten** | Eure eigene Wunschliste + eine dritte Liste für Geschenkideen für andere |
 | **Projekte** | Größere Vorhaben (Urlaub, Haus …) mit Checklisten, Fortschrittsbalken und Archiv für erledigte Schritte |
 
 ## Aufbau

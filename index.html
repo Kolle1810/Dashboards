@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unser Dashboard</title>
+<title>Bürokratie der Liebe</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
@@ -127,6 +127,7 @@
     white-space: nowrap;
   }
   .badge.solo { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .badge.overdue { background: var(--critical); border-color: var(--critical); color: #ffffff; font-weight: 600; }
 
   .who-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .who-a { background: var(--series-a); }
@@ -155,8 +156,6 @@
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
-
-  .blurred { filter: blur(7px); user-select: none; pointer-events: none; }
 
   .meter { height: 8px; border-radius: 4px; background: var(--accent-soft); overflow: hidden; margin-top: 8px; }
   .meter > div { height: 100%; background: var(--accent); border-radius: 4px; }
@@ -197,7 +196,7 @@
 
 <header>
   <div class="header-row">
-    <h1 class="app-title">💑 Unser Dashboard</h1>
+    <h1 class="app-title">💑 Bürokratie der Liebe</h1>
   </div>
   <nav id="mainNav">
     <button data-tab="overview" class="active">Übersicht</button>
@@ -205,7 +204,7 @@
     <button data-tab="costs">Kosten</button>
     <button data-tab="calendar">Kalender</button>
     <button data-tab="todos">To-dos</button>
-    <button data-tab="gifts">Geschenke</button>
+    <button data-tab="gifts">Wunschlisten</button>
     <button data-tab="projects">Projekte</button>
     <button data-tab="settings">⚙️ Einstellungen</button>
   </nav>
@@ -367,7 +366,7 @@
         <summary>Anleitung: Google-Login einrichten (einmalig, Schritt für Schritt)</summary>
         <ol>
           <li>Öffne <b>calendar.google.com</b> am Computer und trage – wie schon gemacht – bei beiden Kalendern die <b>Kalender-ID</b> ein sowie die private Freigabe füreinander (siehe unten „Kalender direkt öffnen“).</li>
-          <li>Öffne <b>console.cloud.google.com</b> und erstelle oben ein neues Projekt, z. B. „Unser Dashboard“.</li>
+          <li>Öffne <b>console.cloud.google.com</b> und erstelle oben ein neues Projekt, z. B. „Bürokratie der Liebe“.</li>
           <li>Suche oben nach <b>„Google Calendar API“</b> und klicke „Aktivieren“.</li>
           <li>Gehe zu <b>„APIs & Dienste“ → „OAuth-Zustimmungsbildschirm“</b>: Nutzertyp „Extern“, App-Namen vergeben, eure beiden E-Mail-Adressen als <b>„Testnutzer“</b> hinzufügen.</li>
           <li>Gehe zu <b>„APIs & Dienste“ → „Anmeldedaten“ → „Anmeldedaten erstellen“ → „OAuth-Client-ID“</b>, Typ <b>„Webanwendung“</b>.</li>
@@ -401,12 +400,25 @@
     <div class="card">
       <h2>To-dos der Woche</h2>
       <p class="hint">Wer macht was? Einfach eintragen, zuweisen und abhaken.</p>
-      <form class="row" id="todoForm">
-        <input type="text" id="todoInput" placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;" required>
-        <select id="todoWho"></select>
+      <form id="todoForm">
+        <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <input type="text" id="todoInput" placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;" required>
+          <select id="todoWho"></select>
+        </div>
+        <div class="row" style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:8px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary);">
+            Datum <input type="date" id="todoDate">
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary);">
+            Frist <input type="date" id="todoDeadline">
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary);">
+            <input type="checkbox" id="todoImportant"> ⭐ Sehr wichtig
+          </label>
+        </div>
         <button class="primary" type="submit">Hinzufügen</button>
       </form>
-      <ul class="plain" id="todoList"></ul>
+      <ul class="plain" id="todoList" style="margin-top:12px;"></ul>
       <div style="margin-top:12px;">
         <button class="ghost" id="clearDoneTodos">✔ Erledigte aufräumen</button>
       </div>
@@ -417,12 +429,11 @@
   <section class="tab" id="tab-gifts">
     <div class="card">
       <h2>🎁 Eure Wunschliste</h2>
-      <p class="hint">Was ihr euch wünscht – als Inspiration für den anderen. Mit dem Auge 👁 könnt ihr eure eigene Liste verstecken, damit die Überraschung geheim bleibt, wenn ihr zusammen vor dem Bildschirm sitzt.</p>
+      <p class="hint">Was ihr euch wünscht – als Inspiration für den anderen.</p>
       <div class="two-col">
         <div>
-          <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
+          <h3 style="font-size:15px;">
             <span id="giftHeadA">Wunschliste …</span>
-            <button class="ghost" id="giftToggleA">👁 Verstecken</button>
           </h3>
           <form class="row" id="giftFormA">
             <input type="text" id="giftInputA" placeholder="Neue Idee…" style="flex:1;" required>
@@ -431,9 +442,8 @@
           <ul class="plain" id="giftListA"></ul>
         </div>
         <div>
-          <h3 style="display:flex; justify-content:space-between; align-items:center; font-size:15px;">
+          <h3 style="font-size:15px;">
             <span id="giftHeadB">Wunschliste …</span>
-            <button class="ghost" id="giftToggleB">👁 Verstecken</button>
           </h3>
           <form class="row" id="giftFormB">
             <input type="text" id="giftInputB" placeholder="Neue Idee…" style="flex:1;" required>
@@ -525,7 +535,7 @@
   </section>
 
 </main>
-<div class="footer-note">Unser Dashboard · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
+<div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
 
 <script>
 "use strict";
@@ -538,8 +548,8 @@ const defaultState = () => ({
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared}
-  todos: [],       // {id, text, who:'A'|'B'|'both', done}
-  gifts: { A: [], B: [], others: [], hiddenA: false, hiddenB: false }, // Wunschliste A/B + Ideen für andere
+  todos: [],       // {id, text, who:'A'|'B'|'both', date, deadline, important, done}
+  gifts: { A: [], B: [], others: [] }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
 });
 // Verschachtelte Objekte einzeln mit den Defaults zusammenführen, damit neu
@@ -1094,18 +1104,34 @@ async function loadAgenda() {
 /* ---------- To-dos ---------- */
 document.getElementById("todoForm").addEventListener("submit", e => {
   e.preventDefault();
-  state.todos.push({ id: uid(), text: document.getElementById("todoInput").value.trim(), who: document.getElementById("todoWho").value, done: false });
+  state.todos.push({
+    id: uid(),
+    text: document.getElementById("todoInput").value.trim(),
+    who: document.getElementById("todoWho").value,
+    date: document.getElementById("todoDate").value,
+    deadline: document.getElementById("todoDeadline").value,
+    important: document.getElementById("todoImportant").checked,
+    done: false
+  });
   document.getElementById("todoInput").value = "";
+  document.getElementById("todoDate").value = "";
+  document.getElementById("todoDeadline").value = "";
+  document.getElementById("todoImportant").checked = false;
   save(); renderAll();
 });
 function renderTodos() {
-  document.getElementById("todoList").innerHTML = state.todos.map(t => `
+  document.getElementById("todoList").innerHTML = state.todos.map(t => {
+    const overdue = !t.done && t.deadline && t.deadline < todayStr();
+    return `
     <li class="${t.done ? "done" : ""}">
       <input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
       <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>
-      <span class="grow">${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
+      <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
+      ${t.date ? `<span class="badge">📅 ${fmtDate(t.date)}</span>` : ""}
+      ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
       <button class="icon" data-del-todo="${t.id}" title="Löschen">✕</button>
-    </li>`).join("") || `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`;
+    </li>`;
+  }).join("") || `<div class="empty">Keine Aufgaben – genießt die freie Zeit! 😄</div>`;
 }
 document.getElementById("todoList").addEventListener("click", e => {
   const cb = e.target.closest("input[data-todo]");
@@ -1125,9 +1151,6 @@ function bindGiftForm(person) {
     state.gifts[person].push({ id: uid(), text: input.value.trim(), done: false });
     input.value = ""; save(); renderAll();
   });
-  document.getElementById("giftToggle" + person).addEventListener("click", () => {
-    state.gifts["hidden" + person] = !state.gifts["hidden" + person]; save(); renderAll();
-  });
   document.getElementById("giftList" + person).addEventListener("click", e => {
     const cb = e.target.closest("input[data-gift]");
     if (cb) { const g = state.gifts[person].find(x => x.id === cb.dataset.gift); g.done = cb.checked; save(); renderAll(); return; }
@@ -1139,10 +1162,7 @@ bindGiftForm("A"); bindGiftForm("B");
 function renderGifts() {
   for (const person of ["A", "B"]) {
     document.getElementById("giftHead" + person).textContent = "Wunschliste " + nameOf(person);
-    const hidden = state.gifts["hidden" + person];
-    document.getElementById("giftToggle" + person).textContent = hidden ? "🙈 Anzeigen" : "👁 Verstecken";
     const ul = document.getElementById("giftList" + person);
-    ul.classList.toggle("blurred", hidden);
     ul.innerHTML = state.gifts[person].map(g => `
       <li class="${g.done ? "done" : ""}">
         <input type="checkbox" ${g.done ? "checked" : ""} data-gift="${g.id}" title="Schon besorgt?">
@@ -1290,7 +1310,7 @@ document.getElementById("exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "unser-dashboard-" + todayStr() + ".json";
+  a.download = "buerokratie-der-liebe-" + todayStr() + ".json";
   a.click();
   URL.revokeObjectURL(a.href);
 });
@@ -1329,10 +1349,13 @@ document.getElementById("demoBtn").addEventListener("click", () => {
     { id: uid(), date: m, desc: "Strom-Abschlag", amount: 95.00, payer: "A", category: "Wohnen" },
     { id: uid(), date: m, desc: "Pizzeria", amount: 46.50, payer: "B", category: "Restaurant" },
     { id: uid(), date: m, desc: "Neues Fahrrad (nur für mich)", amount: 210.00, payer: "A", category: "Sonstiges", shared: false });
+  const inTwoDays = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   state.todos.push(
-    { id: uid(), text: "Wocheneinkauf erledigen", who: "A", done: false },
-    { id: uid(), text: "Bad putzen", who: "B", done: false },
-    { id: uid(), text: "Urlaubsfotos aussortieren", who: "both", done: false });
+    { id: uid(), text: "Wocheneinkauf erledigen", who: "A", date: todayStr(), deadline: "", important: false, done: false },
+    { id: uid(), text: "Bad putzen", who: "B", date: "", deadline: "", important: false, done: false },
+    { id: uid(), text: "Steuererklärung abgeben", who: "both", date: "", deadline: inTwoDays, important: true, done: false },
+    { id: uid(), text: "Versicherung kündigen", who: "A", date: "", deadline: yesterday, important: true, done: false });
   state.projects.push({
     id: uid(), name: "Sommerurlaub", notes: "Zwei Wochen Italien",
     items: [
