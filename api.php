@@ -30,7 +30,13 @@ function respond($code, $data) {
 if (strlen($API_KEY) < 8) {
     respond(500, array('error' => 'server_not_configured', 'hint' => 'Bitte in api.php einen eigenen API_KEY eintragen (mindestens 8 Zeichen).'));
 }
+// Manche Webserver/PHP-Einbindungen entfernen individuelle Header wie
+// X-Api-Key auf dem Weg zu PHP - deshalb zusätzlich als URL-Parameter
+// akzeptieren, der zuverlässig ankommt.
 $providedKey = isset($_SERVER['HTTP_X_API_KEY']) ? $_SERVER['HTTP_X_API_KEY'] : '';
+if ($providedKey === '' && isset($_GET['key'])) {
+    $providedKey = $_GET['key'];
+}
 if (!hash_equals($API_KEY, $providedKey)) {
     respond(401, array('error' => 'invalid_key'));
 }

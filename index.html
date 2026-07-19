@@ -573,7 +573,8 @@ function syncToServer() {
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
-    fetch("api.php?action=save", {
+    const key = encodeURIComponent(state.settings.apiKey);
+    fetch("api.php?action=save&key=" + key, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Api-Key": state.settings.apiKey },
       body: JSON.stringify(state)
@@ -585,7 +586,8 @@ function syncToServer() {
 async function syncFromServer() {
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
   try {
-    const res = await fetch("api.php?action=load", {
+    const key = encodeURIComponent(state.settings.apiKey);
+    const res = await fetch("api.php?action=load&key=" + key, {
       cache: "no-store",
       headers: { "X-Api-Key": state.settings.apiKey }
     });
