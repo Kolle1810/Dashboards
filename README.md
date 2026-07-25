@@ -10,7 +10,6 @@ Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
 | **Übersicht** | Die wichtigsten Zahlen auf einen Blick: Ausgaben, wer wem etwas schuldet, offene To-dos |
 | **Meetings** | Themenliste fürs nächste Paar-Meeting + Protokolle vergangener Meetings |
 | **Kosten** | Ausgaben eintragen (wer hat bezahlt?, ggf. „nicht teilen“), Monatsübersicht mit Diagramm und automatischer 50/50-Abrechnung |
-| **Kalender** | Google-Login mit gemeinsamer Terminliste beider Kalender direkt im Dashboard, plus zwei Buttons zum direkten Öffnen als Rückfalloption |
 | **To-dos** | Wochenaufgaben mit Zuordnung (wer macht's?), Datum, Frist und „sehr wichtig“-Markierung zum Abhaken |
 | **Wunschlisten** | Eure eigene Wunschliste + eine dritte Liste für Geschenkideen für andere |
 | **Projekte** | Größere Vorhaben (Urlaub, Haus …) mit Checklisten, Fortschrittsbalken und Archiv für erledigte Schritte |
@@ -46,12 +45,6 @@ zusätzlich automatisch mit `api.php` auf dem NAS abgeglichen:
 - Ändern beide Personen **gleichzeitig** etwas, gewinnt die zuletzt gespeicherte Version (kein automatisches Zusammenführen) – für den Alltag i. d. R. unproblematisch.
 
 Ganz unten im Dashboard zeigt ein kleiner Hinweis den Synchronisierungsstatus an.
-
-## Google-Kalender & Google-Login
-
-Die Schritt-für-Schritt-Anleitungen (Kalender-IDs, private Freigabe, sowie
-optional der Google-Login fürs Anzeigen voller Termindetails direkt im
-Dashboard) stehen ausklappbar direkt im Tab **„Kalender“**.
 
 ## Backup
 

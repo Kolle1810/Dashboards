@@ -11,7 +11,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bürokratie der Liebe">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     color-scheme: light;
@@ -194,17 +193,6 @@
   details.archive summary::-webkit-details-marker { display: none; }
   details.archive ul { margin-top: 6px; }
 
-  .cal-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--series-a);
-    border-radius: 10px; padding: 12px 16px; text-decoration: none; color: var(--text-primary);
-    font-weight: 600; font-size: 14px; box-shadow: var(--shadow);
-  }
-  .cal-btn:hover { filter: brightness(0.98); }
-  .cal-btn.who-b { border-left-color: var(--series-b); }
-  details.help { font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
-  details.help summary { cursor: pointer; color: var(--accent); }
-  details.help ol { padding-left: 20px; }
 
   .saldo-good { color: var(--good); font-weight: 600; }
   .footer-note { text-align: center; color: var(--text-muted); font-size: 12px; padding: 10px 0 30px; }
@@ -242,7 +230,6 @@
     <option value="overview">Übersicht</option>
     <option value="meetings">Meetings</option>
     <option value="costs">Kosten</option>
-    <option value="calendar">Kalender</option>
     <option value="todos">To-dos</option>
     <option value="gifts">Wunschlisten</option>
     <option value="projects">Projekte</option>
@@ -400,62 +387,6 @@
     </div>
   </section>
 
-  <!-- KALENDER -->
-  <section class="tab" id="tab-calendar">
-    <div class="card">
-      <h2>Eure nächsten Termine</h2>
-      <p class="hint">Beide Kalender kombiniert, direkt hier im Dashboard – mit echtem Google-Login, nicht öffentlich sichtbar.</p>
-      <div class="legend" id="calendarLegend"></div>
-
-      <div id="calendarConnect">
-        <button class="primary" id="calConnectBtn">🔐 Mit Google verbinden</button>
-        <p class="hint" style="margin-top:8px;">Die Verbindung hält etwa eine Stunde – danach einfach erneut klicken.</p>
-      </div>
-
-      <div id="calendarAgenda" style="display:none;">
-        <div id="calendarAgendaList"></div>
-        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span class="hint" id="calendarUpdated" style="margin:0;"></span>
-          <div style="display:flex; gap:8px;">
-            <button class="ghost" id="calRefreshBtn">🔄 Aktualisieren</button>
-            <button class="ghost" id="calDisconnectBtn">Trennen</button>
-          </div>
-        </div>
-      </div>
-
-      <details class="help">
-        <summary>Anleitung: Google-Login einrichten (einmalig, Schritt für Schritt)</summary>
-        <ol>
-          <li>Öffne <b>calendar.google.com</b> am Computer und trage – wie schon gemacht – bei beiden Kalendern die <b>Kalender-ID</b> ein sowie die private Freigabe füreinander (siehe unten „Kalender direkt öffnen“).</li>
-          <li>Öffne <b>console.cloud.google.com</b> und erstelle oben ein neues Projekt, z. B. „Bürokratie der Liebe“.</li>
-          <li>Suche oben nach <b>„Google Calendar API“</b> und klicke „Aktivieren“.</li>
-          <li>Gehe zu <b>„APIs & Dienste“ → „OAuth-Zustimmungsbildschirm“</b>: Nutzertyp „Extern“, App-Namen vergeben, eure beiden E-Mail-Adressen als <b>„Testnutzer“</b> hinzufügen.</li>
-          <li>Gehe zu <b>„APIs & Dienste“ → „Anmeldedaten“ → „Anmeldedaten erstellen“ → „OAuth-Client-ID“</b>, Typ <b>„Webanwendung“</b>.</li>
-          <li>Bei <b>„Autorisierte JavaScript-Quellen“</b> alle Adressen eintragen, über die ihr das Dashboard aufruft (müssen mit <code>https://</code> beginnen) – z. B. eure GitHub-Pages-Adresse und die https-Fernzugriffsadresse eures NAS.</li>
-          <li>Die erzeugte <b>Client-ID</b> kopieren und hier im Dashboard unter <b>⚙️ Einstellungen → Google-Login</b> einfügen.</li>
-        </ol>
-        <p><b>Hinweis:</b> Über eine reine lokale Adresse ohne Schloss-Symbol (z. B. <code>http://192.168.…</code>) funktioniert der Login nicht – nutzt dafür immer eure https-Adresse, auch zuhause.</p>
-      </details>
-    </div>
-
-    <div class="card">
-      <h2>Kalender direkt öffnen</h2>
-      <p class="hint">Funktioniert immer, auch ohne die Google-Login-Einrichtung oben – öffnet den jeweiligen Kalender komplett in einem neuen Tab.</p>
-      <div id="calendarButtons" class="row" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-      <details class="help">
-        <summary>Anleitung: Kalender-IDs einrichten (Schritt für Schritt)</summary>
-        <ol>
-          <li>Öffne <b>calendar.google.com</b> am Computer.</li>
-          <li>Links bei „Meine Kalender“: fahre mit der Maus über deinen Kalender → drei Punkte → <b>„Einstellungen und Freigabe“</b>.</li>
-          <li>Scrolle zu <b>„Kalender-ID“</b> und kopiere sie (sieht meist aus wie eine E-Mail-Adresse, z. B. <code>deinname@gmail.com</code>).</li>
-          <li>Damit der andere deinen Kalender sehen kann: Scrolle zu <b>„Für bestimmte Personen freigeben“</b> → E-Mail-Adresse des anderen hinzufügen → Berechtigung <b>„Alle Informationen zu Veranstaltungen sehen“</b>. Ein „Öffentlich" ist hierfür <b>nicht</b> nötig – eure Kalender bleiben privat, nur füreinander sichtbar.</li>
-          <li>Füge die Kalender-ID hier im Dashboard unter <b>⚙️ Einstellungen → Eure Kalender-IDs</b> in euer jeweiliges Feld ein und speichere.</li>
-          <li>Das macht ihr <b>beide einmal</b> – danach erscheinen hier oben zwei Buttons zum direkten Öffnen.</li>
-        </ol>
-      </details>
-    </div>
-  </section>
-
   <!-- TO-DOS -->
   <section class="tab" id="tab-todos">
     <div class="card">
@@ -560,25 +491,6 @@
     </div>
 
     <div class="card">
-      <h2>Eure Kalender-IDs</h2>
-      <p class="hint">Jede*r trägt hier die eigene Google-Kalender-ID ein (Anleitung im Tab „Kalender“).</p>
-      <form class="row" id="calForm">
-        <input type="text" id="calIdA" placeholder="Kalender-ID, z. B. name@gmail.com" style="flex:1; min-width:220px;">
-        <input type="text" id="calIdB" placeholder="Kalender-ID, z. B. name@gmail.com" style="flex:1; min-width:220px;">
-        <button class="primary" type="submit">Speichern</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Google-Login</h2>
-      <p class="hint">Die Client-ID aus eurem Google-Cloud-Projekt (Anleitung im Tab „Kalender“) – keine geheime Angabe, aber notwendig für den „Mit Google verbinden“-Knopf.</p>
-      <form class="row" id="clientIdForm">
-        <input type="text" id="googleClientId" placeholder="123456789-xxxxx.apps.googleusercontent.com" style="flex:1; min-width:280px;">
-        <button class="primary" type="submit">Speichern</button>
-      </form>
-    </div>
-
-    <div class="card">
       <h2>Geräteübergreifende Synchronisierung</h2>
       <p class="hint">Der API-Schlüssel aus <code>api.php</code> auf eurem NAS – trägt jede*r auf jedem Gerät identisch ein. Damit sehen Kolja und Carina auf all ihren Geräten automatisch dieselben Daten, zentral gespeichert auf eurem NAS.</p>
       <form class="row" id="apiKeyForm">
@@ -617,7 +529,7 @@
 const STORE_KEY = "paarDashboard.v1";
 
 const defaultState = () => ({
-  settings: { nameA: "Kolja", nameB: "Carina", calendarIdA: "", calendarIdB: "", googleClientId: "", apiKey: "" },
+  settings: { nameA: "Kolja", nameB: "Carina", apiKey: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared, fixedCostId?}
@@ -751,7 +663,6 @@ const nameOf = who => who === "A" ? state.settings.nameA : who === "B" ? state.s
 document.getElementById("mainNav").addEventListener("change", e => {
   const tab = e.target.value;
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + tab));
-  if (tab === "calendar") loadAgenda();
 });
 
 /* ---------- Übersicht ---------- */
@@ -1243,191 +1154,6 @@ document.getElementById("costChart").addEventListener("mousemove", e => {
 });
 document.getElementById("costChart").addEventListener("mouseleave", () => tooltip.style.display = "none");
 
-/* ---------- Kalender: Direkt-Buttons (Fallback, funktioniert immer) ---------- */
-function calendarLink(id) {
-  return "https://calendar.google.com/calendar/u/0/r?cid=" + encodeURIComponent(id);
-}
-function renderCalendar() {
-  const container = document.getElementById("calendarButtons");
-  const entries = [
-    { id: state.settings.calendarIdA.trim(), name: state.settings.nameA, who: "a" },
-    { id: state.settings.calendarIdB.trim(), name: state.settings.nameB, who: "b" }
-  ].filter(e => e.id);
-
-  container.innerHTML = entries.length
-    ? entries.map(e => `
-        <a class="cal-btn who-${e.who}" href="${esc(calendarLink(e.id))}" target="_blank" rel="noopener">
-          📅 Kalender von ${esc(e.name)} öffnen
-        </a>`).join("")
-    : `<div class="empty">Noch keine Kalender-IDs eingetragen. So geht's: 👇</div>`;
-
-  const legend = document.getElementById("calendarLegend");
-  const css = getComputedStyle(document.documentElement);
-  const colA = css.getPropertyValue("--series-a").trim();
-  const colB = css.getPropertyValue("--series-b").trim();
-  legend.innerHTML =
-    `<span class="key"><span class="swatch" style="background:${colA}"></span>${esc(state.settings.nameA)}</span>` +
-    `<span class="key"><span class="swatch" style="background:${colB}"></span>${esc(state.settings.nameB)}</span>`;
-
-  if (googleAccessToken || loadStoredToken()) {
-    showConnectedUI();
-    if (lastAgendaEvents) renderAgendaList(lastAgendaEvents);
-  } else {
-    renderConnectState();
-  }
-}
-
-/* ---------- Kalender: Google-Login & Terminliste ---------- */
-const CAL_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
-const TOKEN_KEY = "gcalToken";
-let googleTokenClient = null;
-let googleAccessToken = null;
-let lastAgendaEvents = null;
-
-function loadStoredToken() {
-  try {
-    const raw = sessionStorage.getItem(TOKEN_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed.expiresAt > Date.now()) { googleAccessToken = parsed; return parsed; }
-  } catch { /* ignore */ }
-  return null;
-}
-function storeToken(token, expiresInSeconds) {
-  googleAccessToken = { token, expiresAt: Date.now() + (expiresInSeconds - 60) * 1000 };
-  sessionStorage.setItem(TOKEN_KEY, JSON.stringify(googleAccessToken));
-}
-function clearToken() {
-  googleAccessToken = null;
-  lastAgendaEvents = null;
-  sessionStorage.removeItem(TOKEN_KEY);
-}
-function showConnectedUI() {
-  document.getElementById("calendarConnect").style.display = "none";
-  document.getElementById("calendarAgenda").style.display = "";
-}
-function renderConnectState() {
-  document.getElementById("calendarConnect").style.display = "";
-  document.getElementById("calendarAgenda").style.display = "none";
-}
-
-function ensureTokenClient() {
-  if (!window.google || !google.accounts || !google.accounts.oauth2) return null;
-  const clientId = state.settings.googleClientId.trim();
-  if (!clientId) return null;
-  if (googleTokenClient && googleTokenClient.clientId === clientId) return googleTokenClient.client;
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: CAL_SCOPE,
-    callback: (resp) => {
-      if (resp.error) {
-        alert("Verbindung mit Google fehlgeschlagen: " + resp.error);
-        return;
-      }
-      storeToken(resp.access_token, resp.expires_in);
-      loadAgenda();
-    }
-  });
-  googleTokenClient = { clientId, client };
-  return client;
-}
-
-document.getElementById("calConnectBtn").addEventListener("click", () => {
-  if (!state.settings.googleClientId.trim()) {
-    alert("Bitte zuerst unter ⚙️ Einstellungen → Google-Login eure Client-ID eintragen (Anleitung im Kalender-Tab).");
-    return;
-  }
-  const client = ensureTokenClient();
-  if (!client) {
-    alert("Google-Anmeldung konnte nicht geladen werden. Prüft eure Internetverbindung und ladet die Seite neu.");
-    return;
-  }
-  client.requestAccessToken({ prompt: "" });
-});
-document.getElementById("calDisconnectBtn").addEventListener("click", () => {
-  clearToken();
-  renderConnectState();
-});
-document.getElementById("calRefreshBtn").addEventListener("click", () => loadAgenda());
-
-function normalizeEvent(e) {
-  const startRaw = e.start.dateTime || e.start.date;
-  return {
-    title: e.summary || "(Ohne Titel)",
-    start: new Date(startRaw),
-    isAllDay: !e.start.dateTime
-  };
-}
-async function fetchCalendarEvents(calendarId, token) {
-  const timeMin = new Date().toISOString();
-  const timeMax = new Date(Date.now() + 14 * 86400000).toISOString();
-  const params = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "20" });
-  const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/" + encodeURIComponent(calendarId) + "/events?" + params, {
-    headers: { Authorization: "Bearer " + token }
-  });
-  if (res.status === 401) throw new Error("token_expired");
-  if (!res.ok) throw new Error("fetch_failed:" + res.status);
-  const data = await res.json();
-  return data.items || [];
-}
-function renderAgendaList(events) {
-  const el = document.getElementById("calendarAgendaList");
-  if (!events.length) { el.innerHTML = `<div class="empty">Keine Termine in den nächsten 14 Tagen. 🎉</div>`; return; }
-  const groups = [];
-  const byDay = new Map();
-  for (const e of events) {
-    const key = e.start.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-    if (!byDay.has(key)) { byDay.set(key, []); groups.push(key); }
-    byDay.get(key).push(e);
-  }
-  el.innerHTML = groups.map(day => `
-    <div style="margin-top:10px;">
-      <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.02em; margin-bottom:4px;">${esc(day)}</div>
-      <ul class="plain">
-        ${byDay.get(day).map(e => `
-          <li>
-            <span class="who-dot who-${e.who}"></span>
-            <span class="grow">${esc(e.title)}</span>
-            <span class="badge">${e.isAllDay ? "ganztägig" : e.start.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
-          </li>`).join("")}
-      </ul>
-    </div>`).join("");
-}
-async function loadAgenda() {
-  const token = googleAccessToken || loadStoredToken();
-  if (!token) { renderConnectState(); return; }
-  showConnectedUI();
-
-  const sources = [
-    { id: state.settings.calendarIdA.trim(), who: "a" },
-    { id: state.settings.calendarIdB.trim(), who: "b" }
-  ].filter(s => s.id);
-
-  if (!sources.length) {
-    document.getElementById("calendarAgendaList").innerHTML = `<div class="empty">Bitte zuerst eure Kalender-IDs unten eintragen.</div>`;
-    return;
-  }
-
-  document.getElementById("calendarAgendaList").innerHTML = `<div class="empty">Lade Termine…</div>`;
-  try {
-    const results = await Promise.all(sources.map(async s => {
-      const events = await fetchCalendarEvents(s.id, token.token);
-      return events.map(e => Object.assign(normalizeEvent(e), { who: s.who }));
-    }));
-    lastAgendaEvents = results.flat().sort((a, b) => a.start - b.start);
-    renderAgendaList(lastAgendaEvents);
-    document.getElementById("calendarUpdated").textContent = "Aktualisiert um " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-  } catch (err) {
-    if (String(err.message).startsWith("token_expired")) {
-      clearToken();
-      renderConnectState();
-      alert("Eure Verbindung ist abgelaufen. Bitte erneut auf „Mit Google verbinden“ klicken.");
-    } else {
-      document.getElementById("calendarAgendaList").innerHTML = `<div class="empty">Termine konnten nicht geladen werden. Prüft eure Internetverbindung oder ob die Kalender-IDs stimmen.</div>`;
-    }
-  }
-}
-
 /* ---------- To-dos ---------- */
 let editingTodoId = null;
 function resetTodoForm() {
@@ -1789,21 +1515,6 @@ document.getElementById("namesForm").addEventListener("submit", e => {
   state.settings.nameB = document.getElementById("nameB").value.trim() || "Person 2";
   save(); renderAll();
 });
-document.getElementById("calForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.settings.calendarIdA = document.getElementById("calIdA").value.trim();
-  state.settings.calendarIdB = document.getElementById("calIdB").value.trim();
-  save(); renderAll();
-  alert("Gespeichert! Schau im Tab „Kalender“ nach.");
-});
-document.getElementById("clientIdForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.settings.googleClientId = document.getElementById("googleClientId").value.trim();
-  googleTokenClient = null; // bei geänderter Client-ID neu initialisieren
-  save(); renderAll();
-  alert("Gespeichert! Klickt im Tab „Kalender“ auf „Mit Google verbinden“.");
-});
-
 document.getElementById("apiKeyForm").addEventListener("submit", e => {
   e.preventDefault();
   state.settings.apiKey = document.getElementById("apiKey").value.trim();
@@ -1883,11 +1594,6 @@ function fillSelects() {
   document.getElementById("todoWho").innerHTML = payerHtml + `<option value="both">Beide</option>`;
   document.getElementById("nameA").value = state.settings.nameA;
   document.getElementById("nameB").value = state.settings.nameB;
-  document.getElementById("calIdA").value = state.settings.calendarIdA;
-  document.getElementById("calIdB").value = state.settings.calendarIdB;
-  document.getElementById("calIdA").placeholder = "Kalender-ID von " + state.settings.nameA + ", z. B. name@gmail.com";
-  document.getElementById("calIdB").placeholder = "Kalender-ID von " + state.settings.nameB + ", z. B. name@gmail.com";
-  document.getElementById("googleClientId").value = state.settings.googleClientId;
   document.getElementById("apiKey").value = state.settings.apiKey;
 }
 function renderAll() {
@@ -1896,7 +1602,6 @@ function renderAll() {
   renderTopics();
   renderProtocols();
   renderCosts();
-  renderCalendar();
   renderTodos();
   renderGifts();
   renderGiftsOthers();
