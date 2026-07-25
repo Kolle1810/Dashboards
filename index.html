@@ -119,25 +119,26 @@
   button.ghost:hover { background: var(--accent-soft); }
   button.icon {
     background: none; border: none; cursor: pointer; color: var(--text-muted);
-    font-size: 15px; padding: 2px 6px; border-radius: 6px;
+    font-size: 15px; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;
   }
   button.icon:hover { color: var(--critical); background: var(--page); }
   #manualSyncBtn:hover { color: var(--series-a); background: var(--page); }
 
   ul.plain { list-style: none; margin: 0; padding: 0; }
   ul.plain li {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
     padding: 9px 4px; border-bottom: 1px solid var(--grid);
   }
   ul.plain li:last-child { border-bottom: none; }
-  ul.plain li .grow { flex: 1; }
+  ul.plain li .grow { flex: 1 1 180px; min-width: 0; word-break: break-word; }
   ul.plain li.done .grow { text-decoration: line-through; color: var(--text-muted); }
+  ul.plain li input[type="checkbox"], ul.plain li .who-dot { flex-shrink: 0; }
   .empty { color: var(--text-muted); font-size: 14px; padding: 10px 4px; font-style: italic; }
 
   .badge {
     display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 999px;
     background: var(--page); border: 1px solid var(--border); color: var(--text-secondary);
-    white-space: nowrap;
+    white-space: nowrap; flex-shrink: 0;
   }
   .badge.solo { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .badge.overdue { background: var(--critical); border-color: var(--critical); color: #ffffff; font-weight: 600; }
@@ -147,7 +148,7 @@
   .who-b { background: var(--series-b); }
   .who-both { background: linear-gradient(90deg, var(--series-a) 50%, var(--series-b) 50%); }
 
-  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
   .legend .key { display: flex; align-items: center; gap: 6px; }
   .legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
 
@@ -175,14 +176,17 @@
   .meter > div { height: 100%; background: var(--accent); border-radius: 4px; }
 
   details.protocol { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: var(--page); }
-  details.protocol summary { cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; list-style: none; }
+  details.protocol summary { cursor: pointer; font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; list-style: none; }
   details.protocol summary::before { content: "▸"; color: var(--text-muted); }
   details.protocol[open] summary::before { content: "▾"; }
-  details.protocol .p-date { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+  details.protocol .p-title { flex: 1 1 150px; min-width: 0; word-break: break-word; }
+  details.protocol .p-date { color: var(--text-muted); font-weight: 400; font-size: 13px; flex-shrink: 0; }
   details.protocol .p-body { white-space: pre-wrap; padding: 10px 0 4px; color: var(--text-secondary); }
 
   .project-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; background: var(--page); }
-  .project-card h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .project-card h3 { margin: 0; font-size: 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
+  .project-card h3 .p-title { flex: 1 1 150px; min-width: 0; word-break: break-word; }
+  .project-card h3 .h3-actions { flex-shrink: 0; }
   .project-card .p-notes { color: var(--text-muted); font-size: 13px; margin: 4px 0 6px; }
   details.archive { margin-top: 10px; }
   details.archive summary { cursor: pointer; color: var(--text-muted); font-size: 13px; list-style: none; }
@@ -839,8 +843,7 @@ function renderProtocols() {
   const sorted = [...state.protocols].sort((a, b) => b.date.localeCompare(a.date));
   el.innerHTML = sorted.map(p => `
     <details class="protocol">
-      <summary><span>${esc(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
-        <span style="flex:1"></span>
+      <summary><span class="p-title">${esc(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
         <button class="icon" data-edit-protocol="${p.id}" title="Bearbeiten">✏️</button>
         <button class="icon" data-del-protocol="${p.id}" title="Löschen">✕</button></summary>
       <div class="p-body">${esc(p.notes) || "<i>Keine Notizen.</i>"}</div>
@@ -1588,8 +1591,8 @@ function renderProjects() {
     const editingItem = editingHere ? p.items.find(i => i.id === editingProjectItem.iid) : null;
     return `
     <div class="project-card">
-      <h3>${esc(p.name)}
-        <span>
+      <h3><span class="p-title">${esc(p.name)}</span>
+        <span class="h3-actions">
           <button class="icon" data-edit-project="${p.id}" title="Bearbeiten">✏️</button>
           <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button>
         </span>
