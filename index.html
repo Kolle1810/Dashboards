@@ -225,6 +225,11 @@
     white-space: nowrap; flex-shrink: 0;
   }
   .undo-toast #undoBtn:hover { filter: brightness(1.08); }
+  .undo-toast #undoDismissBtn {
+    background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer;
+    font-size: 15px; padding: 2px 4px; flex-shrink: 0; font-family: inherit;
+  }
+  .undo-toast #undoDismissBtn:hover { color: #fff; }
 </style>
 </head>
 <body>
@@ -602,6 +607,7 @@
 <div id="undoToast" class="undo-toast">
   <span id="undoLabel"></span>
   <button type="button" id="undoBtn">Rückgängig</button>
+  <button type="button" id="undoDismissBtn" title="Schließen">✕</button>
 </div>
 
 <script>
@@ -705,23 +711,24 @@ document.getElementById("manualSyncBtn").addEventListener("click", () => {
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ---------- Rückgängig (Undo) ---------- */
+// Bleibt bewusst dauerhaft sichtbar (kein Timeout) - schließt nur bei Klick auf
+// "Rückgängig", auf ✕, oder wird von der nächsten Löschung ersetzt.
 let undoRestore = null;
-let undoTimer = null;
 function offerUndo(label, restoreFn) {
   undoRestore = restoreFn;
-  clearTimeout(undoTimer);
   document.getElementById("undoLabel").textContent = label;
-  const toast = document.getElementById("undoToast");
-  toast.classList.add("show");
-  undoTimer = setTimeout(() => { toast.classList.remove("show"); undoRestore = null; }, 8000);
+  document.getElementById("undoToast").classList.add("show");
 }
 document.getElementById("undoBtn").addEventListener("click", () => {
   if (!undoRestore) return;
   undoRestore();
   undoRestore = null;
-  clearTimeout(undoTimer);
   document.getElementById("undoToast").classList.remove("show");
   save(); renderAll();
+});
+document.getElementById("undoDismissBtn").addEventListener("click", () => {
+  undoRestore = null;
+  document.getElementById("undoToast").classList.remove("show");
 });
 
 /* ---------- Hilfsfunktionen ---------- */
