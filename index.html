@@ -208,6 +208,23 @@
 
   .saldo-good { color: var(--good); font-weight: 600; }
   .footer-note { text-align: center; color: var(--text-muted); font-size: 12px; padding: 10px 0 30px; }
+
+  .undo-toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(0);
+    display: flex; align-items: center; gap: 14px;
+    background: var(--text-primary); color: #fff;
+    padding: 12px 16px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    font-size: 14px; z-index: 20; max-width: calc(100vw - 32px);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  }
+  .undo-toast.show { opacity: 1; pointer-events: auto; }
+  .undo-toast #undoLabel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .undo-toast #undoBtn {
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 7px;
+    padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .undo-toast #undoBtn:hover { filter: brightness(1.08); }
 </style>
 </head>
 <body>
@@ -582,6 +599,11 @@
 </main>
 <div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span> <button class="icon" id="manualSyncBtn" title="Jetzt synchronisieren" style="vertical-align:middle;">🔄</button></div>
 
+<div id="undoToast" class="undo-toast">
+  <span id="undoLabel"></span>
+  <button type="button" id="undoBtn">Rückgängig</button>
+</div>
+
 <script>
 "use strict";
 
@@ -681,6 +703,26 @@ document.getElementById("manualSyncBtn").addEventListener("click", () => {
   syncFromServer();
 });
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------- Rückgängig (Undo) ---------- */
+let undoRestore = null;
+let undoTimer = null;
+function offerUndo(label, restoreFn) {
+  undoRestore = restoreFn;
+  clearTimeout(undoTimer);
+  document.getElementById("undoLabel").textContent = label;
+  const toast = document.getElementById("undoToast");
+  toast.classList.add("show");
+  undoTimer = setTimeout(() => { toast.classList.remove("show"); undoRestore = null; }, 8000);
+}
+document.getElementById("undoBtn").addEventListener("click", () => {
+  if (!undoRestore) return;
+  undoRestore();
+  undoRestore = null;
+  clearTimeout(undoTimer);
+  document.getElementById("undoToast").classList.remove("show");
+  save(); renderAll();
+});
 
 /* ---------- Hilfsfunktionen ---------- */
 const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
@@ -807,7 +849,13 @@ document.getElementById("topicList").addEventListener("click", e => {
     return;
   }
   const del = e.target.closest("[data-del-topic]");
-  if (del) { state.topics = state.topics.filter(x => x.id !== del.dataset.delTopic); save(); renderAll(); }
+  if (del) {
+    const idx = state.topics.findIndex(x => x.id === del.dataset.delTopic);
+    const removed = state.topics[idx];
+    state.topics.splice(idx, 1);
+    save(); renderAll();
+    offerUndo("Thema gelöscht", () => state.topics.splice(idx, 0, removed));
+  }
 });
 
 let editingProtocolId = null;
@@ -864,9 +912,12 @@ document.getElementById("protocolList").addEventListener("click", e => {
     return;
   }
   const del = e.target.closest("[data-del-protocol]");
-  if (del && confirm("Dieses Protokoll wirklich löschen?")) {
-    state.protocols = state.protocols.filter(p => p.id !== del.dataset.delProtocol);
+  if (del) {
+    const idx = state.protocols.findIndex(p => p.id === del.dataset.delProtocol);
+    const removed = state.protocols[idx];
+    state.protocols.splice(idx, 1);
     save(); renderAll();
+    offerUndo("Protokoll gelöscht", () => state.protocols.splice(idx, 0, removed));
   }
 });
 
@@ -990,9 +1041,12 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
     return;
   }
   const del = e.target.closest("[data-del-fc]");
-  if (del && confirm("Diese Fixkosten wirklich entfernen? Bereits eingetragene Monate bleiben erhalten, es kommen nur keine neuen mehr automatisch dazu.")) {
-    state.fixedCosts = state.fixedCosts.filter(x => x.id !== del.dataset.delFc);
+  if (del) {
+    const idx = state.fixedCosts.findIndex(x => x.id === del.dataset.delFc);
+    const removed = state.fixedCosts[idx];
+    state.fixedCosts.splice(idx, 1);
     save(); renderAll();
+    offerUndo("Fixkosten entfernt", () => state.fixedCosts.splice(idx, 0, removed));
   }
 });
 
@@ -1000,6 +1054,7 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
 function materializeFixedCosts(ym) {
   let added = false;
   state.fixedCosts.forEach(fc => {
+    if (fc.skipMonths && fc.skipMonths.includes(ym)) return; // Nutzer hat den Eintrag für diesen Monat bewusst gelöscht
     const exists = state.expenses.some(e => e.fixedCostId === fc.id && e.date === ym);
     if (!exists) {
       state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, shared: true, fixedCostId: fc.id });
@@ -1070,9 +1125,22 @@ document.getElementById("expenseTable").addEventListener("click", e => {
     return;
   }
   const del = e.target.closest("[data-del-exp]");
-  if (del && confirm("Diesen Eintrag wirklich löschen?")) {
-    state.expenses = state.expenses.filter(x => x.id !== del.dataset.delExp);
+  if (del) {
+    const idx = state.expenses.findIndex(x => x.id === del.dataset.delExp);
+    const removed = state.expenses[idx];
+    state.expenses.splice(idx, 1);
+    // Bei automatisch aus Fixkosten erzeugten Ausgaben merken, dass der Monat bewusst
+    // gelöscht wurde, damit materializeFixedCosts() sie beim nächsten Rendern nicht sofort neu anlegt.
+    const fc = removed.fixedCostId ? state.fixedCosts.find(x => x.id === removed.fixedCostId) : null;
+    if (fc) {
+      fc.skipMonths = fc.skipMonths || [];
+      fc.skipMonths.push(removed.date);
+    }
     save(); renderAll();
+    offerUndo("Ausgabe gelöscht", () => {
+      if (fc) fc.skipMonths = fc.skipMonths.filter(m => m !== removed.date);
+      state.expenses.splice(idx, 0, removed);
+    });
   }
 });
 
@@ -1433,7 +1501,13 @@ function handleTodoListClick(e) {
     return;
   }
   const del = e.target.closest("[data-del-todo]");
-  if (del) { state.todos = state.todos.filter(x => x.id !== del.dataset.delTodo); save(); renderAll(); }
+  if (del) {
+    const idx = state.todos.findIndex(x => x.id === del.dataset.delTodo);
+    const removed = state.todos[idx];
+    state.todos.splice(idx, 1);
+    save(); renderAll();
+    offerUndo("To-do gelöscht", () => state.todos.splice(idx, 0, removed));
+  }
 }
 document.getElementById("todoList").addEventListener("click", handleTodoListClick);
 document.getElementById("todoArchive").addEventListener("click", handleTodoListClick);
@@ -1476,7 +1550,13 @@ function bindGiftForm(person) {
       return;
     }
     const del = e.target.closest("[data-del-gift]");
-    if (del) { state.gifts[person] = state.gifts[person].filter(x => x.id !== del.dataset.delGift); save(); renderAll(); }
+    if (del) {
+      const idx = state.gifts[person].findIndex(x => x.id === del.dataset.delGift);
+      const removed = state.gifts[person][idx];
+      state.gifts[person].splice(idx, 1);
+      save(); renderAll();
+      offerUndo("Idee gelöscht", () => state.gifts[person].splice(idx, 0, removed));
+    }
   });
 }
 bindGiftForm("A"); bindGiftForm("B");
@@ -1532,7 +1612,13 @@ document.getElementById("giftListOthers").addEventListener("click", e => {
     return;
   }
   const del = e.target.closest("[data-del-gift-other]");
-  if (del) { state.gifts.others = state.gifts.others.filter(x => x.id !== del.dataset.delGiftOther); save(); renderAll(); }
+  if (del) {
+    const idx = state.gifts.others.findIndex(x => x.id === del.dataset.delGiftOther);
+    const removed = state.gifts.others[idx];
+    state.gifts.others.splice(idx, 1);
+    save(); renderAll();
+    offerUndo("Idee gelöscht", () => state.gifts.others.splice(idx, 0, removed));
+  }
 });
 function renderGiftsOthers() {
   const ul = document.getElementById("giftListOthers");
@@ -1658,8 +1744,15 @@ document.getElementById("projectList").addEventListener("click", e => {
   if (delI) {
     const [pid, iid] = delI.dataset.delPitem.split(":");
     const proj = state.projects.find(p => p.id === pid);
-    proj.items = proj.items.filter(i => i.id !== iid);
-    save(); renderAll(); return;
+    const idx = proj.items.findIndex(i => i.id === iid);
+    const removed = proj.items[idx];
+    proj.items.splice(idx, 1);
+    save(); renderAll();
+    offerUndo("Schritt gelöscht", () => {
+      const p = state.projects.find(x => x.id === pid);
+      if (p) p.items.splice(idx, 0, removed);
+    });
+    return;
   }
   const editProject = e.target.closest("[data-edit-project]");
   if (editProject) {
@@ -1673,9 +1766,12 @@ document.getElementById("projectList").addEventListener("click", e => {
     return;
   }
   const delP = e.target.closest("[data-del-project]");
-  if (delP && confirm("Dieses Projekt mit allen Schritten löschen?")) {
-    state.projects = state.projects.filter(p => p.id !== delP.dataset.delProject);
+  if (delP) {
+    const idx = state.projects.findIndex(p => p.id === delP.dataset.delProject);
+    const removed = state.projects[idx];
+    state.projects.splice(idx, 1);
     save(); renderAll();
+    offerUndo("Projekt gelöscht", () => state.projects.splice(idx, 0, removed));
   }
 });
 
