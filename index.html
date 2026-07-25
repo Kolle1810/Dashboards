@@ -44,6 +44,7 @@
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: 15px;
     line-height: 1.5;
+    overflow-x: hidden;
   }
 
   header {
@@ -61,17 +62,21 @@
     margin: 0 auto;
   }
   .app-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--base-ink); }
-  nav {
-    display: flex; gap: 4px; max-width: 1000px; margin: 12px auto 0;
-    overflow-x: auto;
+  #mainNav {
+    display: block; width: 100%; max-width: 320px; margin: 12px auto 0;
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 999px; padding: 10px 16px; font-size: 15px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23163651'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+    padding-right: 40px;
+    text-align: center;
+    text-align-last: center;
   }
-  nav button {
-    background: none; border: none; padding: 8px 13px; cursor: pointer;
-    font-size: 14px; color: var(--base-ink); opacity: 0.72; white-space: nowrap;
-    border-radius: 999px; font-family: inherit;
-  }
-  nav button.active { background: var(--accent); color: var(--accent-ink); font-weight: 600; opacity: 1; }
-  nav button:hover { opacity: 1; }
+  #mainNav:focus { outline: 2px solid var(--base-ink); outline-offset: 2px; }
 
   main { max-width: 1000px; margin: 0 auto; padding: 20px; }
   .tab { display: none; }
@@ -156,7 +161,8 @@
   .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .month-nav .month-label { font-weight: 600; min-width: 150px; text-align: center; }
 
-  table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.data { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 14px; }
   table.data th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--baseline); }
   table.data td { padding: 8px; border-bottom: 1px solid var(--grid); }
   table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -206,16 +212,16 @@
   <div class="header-row">
     <h1 class="app-title">💑 Bürokratie der Liebe</h1>
   </div>
-  <nav id="mainNav">
-    <button data-tab="overview" class="active">Übersicht</button>
-    <button data-tab="meetings">Meetings</button>
-    <button data-tab="costs">Kosten</button>
-    <button data-tab="calendar">Kalender</button>
-    <button data-tab="todos">To-dos</button>
-    <button data-tab="gifts">Wunschlisten</button>
-    <button data-tab="projects">Projekte</button>
-    <button data-tab="settings">⚙️ Einstellungen</button>
-  </nav>
+  <select id="mainNav">
+    <option value="overview">Übersicht</option>
+    <option value="meetings">Meetings</option>
+    <option value="costs">Kosten</option>
+    <option value="calendar">Kalender</option>
+    <option value="todos">To-dos</option>
+    <option value="gifts">Wunschlisten</option>
+    <option value="projects">Projekte</option>
+    <option value="settings">⚙️ Einstellungen</option>
+  </select>
 </header>
 
 <main>
@@ -356,12 +362,14 @@
       </div>
 
       <h2 style="margin-top:18px;">Alle Einträge des Monats</h2>
-      <table class="data" id="expenseTableWrap">
-        <thead>
-          <tr><th>Beschreibung</th><th>Kategorie</th><th>Bezahlt von</th><th class="num">Betrag</th><th></th></tr>
-        </thead>
-        <tbody id="expenseTable"></tbody>
-      </table>
+      <div class="table-scroll" id="expenseTableWrap">
+        <table class="data">
+          <thead>
+            <tr><th>Beschreibung</th><th>Kategorie</th><th>Bezahlt von</th><th class="num">Betrag</th><th></th></tr>
+          </thead>
+          <tbody id="expenseTable"></tbody>
+        </table>
+      </div>
       <div class="empty" id="expenseEmpty" style="display:none;">Noch keine Ausgaben in diesem Monat. Trag oben die erste ein!</div>
     </div>
   </section>
@@ -687,12 +695,10 @@ function esc(s) {
 const nameOf = who => who === "A" ? state.settings.nameA : who === "B" ? state.settings.nameB : "Beide";
 
 /* ---------- Tabs ---------- */
-document.getElementById("mainNav").addEventListener("click", e => {
-  const btn = e.target.closest("button[data-tab]");
-  if (!btn) return;
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b === btn));
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + btn.dataset.tab));
-  if (btn.dataset.tab === "calendar") loadAgenda();
+document.getElementById("mainNav").addEventListener("change", e => {
+  const tab = e.target.value;
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + tab));
+  if (tab === "calendar") loadAgenda();
 });
 
 /* ---------- Übersicht ---------- */
