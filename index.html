@@ -117,6 +117,7 @@
     font-size: 15px; padding: 2px 6px; border-radius: 6px;
   }
   button.icon:hover { color: var(--critical); background: var(--page); }
+  #manualSyncBtn:hover { color: var(--series-a); background: var(--page); }
 
   ul.plain { list-style: none; margin: 0; padding: 0; }
   ul.plain li {
@@ -567,7 +568,7 @@
   </section>
 
 </main>
-<div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
+<div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span> <button class="icon" id="manualSyncBtn" title="Jetzt synchronisieren" style="vertical-align:middle;">🔄</button></div>
 
 <script>
 "use strict";
@@ -655,11 +656,18 @@ function setSyncStatus(kind) {
     el.style.color = "var(--good)";
   } else if (kind === "unset") {
     el.textContent = "";
+  } else if (kind === "loading") {
+    el.textContent = "⏳ Synchronisiere …";
+    el.style.color = "var(--text-muted)";
   } else {
     el.textContent = "⚠️ NAS nicht erreichbar – Änderungen bleiben lokal gespeichert";
     el.style.color = "var(--critical)";
   }
 }
+document.getElementById("manualSyncBtn").addEventListener("click", () => {
+  setSyncStatus("loading");
+  syncFromServer();
+});
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -1791,6 +1799,10 @@ window.addEventListener("resize", () => renderCosts());
 syncFromServer();
 setInterval(() => { if (!document.hidden) syncFromServer(); }, 20000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) syncFromServer(); });
+// iOS friert als Homebildschirm-App gestartete Seiten beim Wechsel in den Hintergrund oft ein,
+// statt sie neu zu laden. "pageshow" feuert zuverlässig auch bei einem solchen Aufwachen
+// (anders als "visibilitychange", das dabei manchmal ausbleibt) und stößt dann einen frischen Sync an.
+window.addEventListener("pageshow", () => { if (!document.hidden) syncFromServer(); });
 </script>
 </body>
 </html>
