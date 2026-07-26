@@ -337,6 +337,10 @@
         <button class="primary" type="submit" id="fcSubmitBtn">Hinzufügen</button>
         <button class="ghost" type="button" id="fcCancelBtn" style="display:none;">Abbrechen</button>
       </form>
+      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
+        <input type="checkbox" id="fcSolo">
+        Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
+      </label>
       <ul class="plain" id="fixedCostList" style="margin-top:12px;"></ul>
     </div>
 
@@ -533,7 +537,7 @@ const defaultState = () => ({
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
   expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared, fixedCostId?}
-  fixedCosts: [],  // {id, desc, amount, payer:'A'|'B', category} - wird automatisch jeden Monat als Ausgabe eingetragen
+  fixedCosts: [],  // {id, desc, amount, payer:'A'|'B', category, shared} - wird automatisch jeden Monat als Ausgabe eingetragen
   todos: [],       // {id, text, who:'A'|'B'|'both', date, deadline, important, done}
   gifts: { A: [], B: [], others: [] }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
@@ -910,6 +914,7 @@ function resetFixedCostForm() {
   editingFixedCostId = null;
   document.getElementById("fcDesc").value = "";
   document.getElementById("fcAmount").value = "";
+  document.getElementById("fcSolo").checked = false;
   document.getElementById("fcSubmitBtn").textContent = "Hinzufügen";
   document.getElementById("fcCancelBtn").style.display = "none";
 }
@@ -921,7 +926,8 @@ document.getElementById("fixedCostForm").addEventListener("submit", e => {
     desc: document.getElementById("fcDesc").value.trim(),
     amount,
     payer: document.getElementById("fcPayer").value,
-    category: document.getElementById("fcCategory").value
+    category: document.getElementById("fcCategory").value,
+    shared: !document.getElementById("fcSolo").checked
   };
   if (editingFixedCostId) {
     Object.assign(state.fixedCosts.find(x => x.id === editingFixedCostId), fields);
@@ -939,6 +945,7 @@ function renderFixedCostList() {
     <li>
       <span class="who-dot who-${fc.payer.toLowerCase()}" title="${esc(nameOf(fc.payer))}"></span>
       <span class="grow">${esc(fc.desc)} <span style="color:var(--text-muted); font-size:12px;">(${esc(fc.category)})</span></span>
+      ${fc.shared === false ? `<span class="badge solo">100%</span>` : ""}
       <span class="badge">${eur.format(fc.amount)}</span>
       <button class="icon" data-edit-fc="${fc.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-fc="${fc.id}" title="Entfernen">✕</button>
@@ -952,6 +959,7 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
     document.getElementById("fcAmount").value = fc.amount.toFixed(2).replace(".", ",");
     document.getElementById("fcPayer").value = fc.payer;
     document.getElementById("fcCategory").value = fc.category;
+    document.getElementById("fcSolo").checked = fc.shared === false;
     editingFixedCostId = fc.id;
     document.getElementById("fcSubmitBtn").textContent = "Speichern";
     document.getElementById("fcCancelBtn").style.display = "";
@@ -975,7 +983,7 @@ function materializeFixedCosts(ym) {
     if (fc.skipMonths && fc.skipMonths.includes(ym)) return; // Nutzer hat den Eintrag für diesen Monat bewusst gelöscht
     const exists = state.expenses.some(e => e.fixedCostId === fc.id && e.date === ym);
     if (!exists) {
-      state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, shared: true, fixedCostId: fc.id });
+      state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, shared: fc.shared !== false, fixedCostId: fc.id });
       added = true;
     }
   });
