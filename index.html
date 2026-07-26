@@ -121,7 +121,8 @@
     font-size: 15px; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;
   }
   button.icon:hover { color: var(--critical); background: var(--page); }
-  #manualSyncBtn:hover { color: var(--series-a); background: var(--page); }
+  #manualSyncBtn { color: var(--base-ink); font-size: 19px; opacity: 0.8; }
+  #manualSyncBtn:hover { opacity: 1; background: rgba(255,255,255,0.35); }
 
   ul.plain { list-style: none; margin: 0; padding: 0; }
   ul.plain li {
@@ -225,6 +226,7 @@
 <header>
   <div class="header-row">
     <h1 class="app-title">💑 Bürokratie der Liebe</h1>
+    <button class="icon" id="manualSyncBtn" title="Jetzt synchronisieren">🔄</button>
   </div>
   <select id="mainNav">
     <option value="overview">Übersicht</option>
@@ -518,7 +520,7 @@
   </section>
 
 </main>
-<div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span> <button class="icon" id="manualSyncBtn" title="Jetzt synchronisieren" style="vertical-align:middle;">🔄</button></div>
+<div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
 
 <div id="undoToast" class="undo-toast">
   <span id="undoLabel"></span>
@@ -596,7 +598,13 @@ async function syncFromServer() {
       return; // NAS hat noch keine Daten -> lokalen Stand einmalig hochladen
     }
     if (JSON.stringify(serverState) === JSON.stringify(state)) { setSyncStatus("ok"); return; }
+    const workingKey = state.settings.apiKey;
     state = mergeWithDefaults(serverState);
+    // Der gerade verwendete Schlüssel hat sich soeben als gültig erwiesen (die Anfrage kam
+    // ja durch) - falls im Server-Datensatz aus irgendeinem Grund kein/ein leerer Schlüssel
+    // steht, diesen niemals übernehmen. Sonst würde ein einziger unvollständiger Datensatz
+    // die Synchronisierung auf allen Geräten dauerhaft lahmlegen.
+    if (!state.settings.apiKey) state.settings.apiKey = workingKey;
     localStorage.setItem(STORE_KEY, JSON.stringify(state));
     renderAll();
     setSyncStatus("ok");
