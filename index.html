@@ -562,30 +562,53 @@ function load() {
     return mergeWithDefaults(JSON.parse(raw));
   } catch { return defaultState(); }
 }
+// Nur für echte Eingaben der Nutzer*innen: markiert die Daten als "noch nicht beim NAS".
 function save() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  saveLocalOnly();
   setPendingUpload(true); // erst nach erfolgreichem Upload wieder zurücksetzen
   syncToServer();
 }
+// Speichert ausschließlich lokal, ohne die Daten als eigene ungesicherte Änderung zu
+// markieren. Für automatisch abgeleitete Einträge (z. B. Fixkosten des Monats), die
+// niemals Vorrang vor dem Server-Stand haben dürfen.
+function saveLocalOnly() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
 
 /* ---------- Server-Synchronisierung (NAS) ---------- */
-const PENDING_KEY = STORE_KEY + ".pending";
+// ".pending2": Eine frühere Fassung konnte die Markierung fälschlich setzen (durch das
+// automatische Anlegen der Fixkosten beim Start). Der neue Name sorgt dafür, dass solche
+// falschen Markierungen von Geräten ignoriert statt weitergeschleppt werden.
+const PENDING_KEY = STORE_KEY + ".pending2";
 const SYNC_TIMEOUT_MS = 8000;
 let syncTimer = null;
 let retryTimer = null;
 let retryDelay = 0;
+// Erst wenn einmal erfolgreich mit dem NAS gesprochen wurde, ist bekannt, ob der lokale
+// Stand aktuell ist. Vorher darf nichts automatisch Abgeleitetes hochgeladen werden.
+let initialSyncDone = false;
 
 // Merkt sich - auch über einen Neustart der App hinweg -, ob lokale Änderungen noch nicht
 // beim NAS angekommen sind. Solange das der Fall ist, darf ein vom Server geladener
 // (dann ja älterer) Stand die eigenen Eingaben NICHT überschreiben.
 let pendingUpload = false;
-try { pendingUpload = localStorage.getItem(PENDING_KEY) === "1"; } catch { /* Speicher nicht verfügbar */ }
+try {
+  localStorage.removeItem(STORE_KEY + ".pending"); // Altlast der fehlerhaften Fassung entfernen
+  pendingUpload = localStorage.getItem(PENDING_KEY) === "1";
+} catch { /* Speicher nicht verfügbar */ }
 function setPendingUpload(v) {
   pendingUpload = v;
   try {
     if (v) localStorage.setItem(PENDING_KEY, "1");
     else localStorage.removeItem(PENDING_KEY);
   } catch { /* Speicher nicht verfügbar */ }
+}
+// Nach dem ersten erfolgreichen Kontakt mit dem NAS steht der richtige Stand fest -
+// jetzt darf neu gerendert und dabei auch regulär gespeichert/hochgeladen werden.
+function markInitialSyncDone() {
+  if (initialSyncDone) return;
+  initialSyncDone = true;
+  renderAll();
 }
 
 // fetch mit Zeitlimit: Ohne das bleiben Anfragen auf dem Handy bei schlechtem oder
@@ -628,6 +651,7 @@ async function uploadNow() {
       setPendingUpload(false);
       clearRetry();
       setSyncStatus("ok");
+      markInitialSyncDone();
       return true;
     }
     setSyncStatus(await syncErrorKind(res));
@@ -642,7 +666,9 @@ async function uploadNow() {
 const offlineNow = () => navigator.onLine === false;
 
 async function syncFromServer() {
-  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
+  // Ohne Schlüssel läuft das Dashboard rein lokal - dann gibt es keinen Server-Stand,
+  // auf den gewartet werden müsste.
+  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); markInitialSyncDone(); return; }
   // Noch nicht hochgeladene eigene Änderungen haben Vorrang: Erst hochladen, sonst würde
   // der ältere Server-Stand sie gleich wieder überschreiben (= stiller Datenverlust).
   if (pendingUpload) { await uploadNow(); return; }
@@ -656,12 +682,17 @@ async function syncFromServer() {
     const serverState = await res.json();
     if (!serverState || typeof serverState !== "object" || !Object.keys(serverState).length) {
       setSyncStatus("ok");
-      return; // NAS hat noch keine Daten -> lokalen Stand einmalig hochladen
+      markInitialSyncDone(); // NAS hat noch keine Daten -> lokaler Stand ist maßgeblich
+      return;
     }
     // Während die Antwort unterwegs war, kann etwas eingetragen worden sein - dann gilt
     // wieder: eigene Änderungen zuerst, niemals überschreiben.
     if (pendingUpload) { await uploadNow(); return; }
-    if (JSON.stringify(serverState) === JSON.stringify(state)) { setSyncStatus("ok"); return; }
+    if (JSON.stringify(serverState) === JSON.stringify(state)) {
+      setSyncStatus("ok");
+      markInitialSyncDone();
+      return;
+    }
     const workingKey = state.settings.apiKey;
     state = mergeWithDefaults(serverState);
     // Der gerade verwendete Schlüssel hat sich soeben als gültig erwiesen (die Anfrage kam
@@ -669,9 +700,10 @@ async function syncFromServer() {
     // steht, diesen niemals übernehmen. Sonst würde ein einziger unvollständiger Datensatz
     // die Synchronisierung auf allen Geräten dauerhaft lahmlegen.
     if (!state.settings.apiKey) state.settings.apiKey = workingKey;
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
-    renderAll();
+    saveLocalOnly();
     setSyncStatus("ok");
+    initialSyncDone = true; // ab jetzt dürfen Fixkosten regulär angelegt werden
+    renderAll();
   } catch {
     setSyncStatus(offlineNow() ? "offline" : "error");
   }
@@ -1081,7 +1113,11 @@ function materializeFixedCosts(ym) {
       added = true;
     }
   });
-  if (added) save();
+  // Vor dem ersten erfolgreichen Abgleich nur lokal merken: Diese Einträge lassen sich
+  // jederzeit aus den Fixkosten ableiten und dürfen NICHT als eigene ungesicherte Änderung
+  // gelten - sonst würde beim Öffnen der lokale (womöglich veraltete) Stand hochgeladen
+  // und der gute Stand auf dem NAS überschrieben.
+  if (added) { initialSyncDone ? save() : saveLocalOnly(); }
 }
 
 function renderCosts() {
