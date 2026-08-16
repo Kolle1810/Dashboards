@@ -564,30 +564,91 @@ function load() {
 }
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  setPendingUpload(true); // erst nach erfolgreichem Upload wieder zurücksetzen
   syncToServer();
 }
 
 /* ---------- Server-Synchronisierung (NAS) ---------- */
+const PENDING_KEY = STORE_KEY + ".pending";
+const SYNC_TIMEOUT_MS = 8000;
 let syncTimer = null;
+let retryTimer = null;
+let retryDelay = 0;
+
+// Merkt sich - auch über einen Neustart der App hinweg -, ob lokale Änderungen noch nicht
+// beim NAS angekommen sind. Solange das der Fall ist, darf ein vom Server geladener
+// (dann ja älterer) Stand die eigenen Eingaben NICHT überschreiben.
+let pendingUpload = false;
+try { pendingUpload = localStorage.getItem(PENDING_KEY) === "1"; } catch { /* Speicher nicht verfügbar */ }
+function setPendingUpload(v) {
+  pendingUpload = v;
+  try {
+    if (v) localStorage.setItem(PENDING_KEY, "1");
+    else localStorage.removeItem(PENDING_KEY);
+  } catch { /* Speicher nicht verfügbar */ }
+}
+
+// fetch mit Zeitlimit: Ohne das bleiben Anfragen auf dem Handy bei schlechtem oder
+// halb verbundenem WLAN teils endlos hängen, statt zu scheitern und es erneut zu versuchen.
+async function apiFetch(url, options) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SYNC_TIMEOUT_MS);
+  try {
+    return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function clearRetry() { clearTimeout(retryTimer); retryTimer = null; retryDelay = 0; }
+// Wiederholt einen fehlgeschlagenen Upload automatisch mit wachsendem Abstand, bis er klappt.
+// Ohne das gingen Änderungen verloren, die während einer kurzen Störung eingetragen wurden.
+function scheduleRetry() {
+  if (!pendingUpload) return;
+  retryDelay = retryDelay ? Math.min(retryDelay * 2, 60000) : 3000;
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(() => { retryTimer = null; uploadNow(); }, retryDelay);
+}
+
 function syncToServer() {
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
+  syncTimer = setTimeout(uploadNow, 400);
+}
+async function uploadNow() {
+  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return false; }
+  try {
     const key = encodeURIComponent(state.settings.apiKey);
-    fetch("api.php?action=save&key=" + key, {
+    const res = await apiFetch("api.php?action=save&key=" + key, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Api-Key": state.settings.apiKey },
       body: JSON.stringify(state)
-    }).then(async res => {
-      setSyncStatus(res.ok ? "ok" : await syncErrorKind(res));
-    }).catch(() => setSyncStatus("error"));
-  }, 400);
+    });
+    if (res.ok) {
+      setPendingUpload(false);
+      clearRetry();
+      setSyncStatus("ok");
+      return true;
+    }
+    setSyncStatus(await syncErrorKind(res));
+    scheduleRetry();
+    return false;
+  } catch {
+    setSyncStatus(offlineNow() ? "offline" : "error");
+    scheduleRetry();
+    return false;
+  }
 }
+const offlineNow = () => navigator.onLine === false;
+
 async function syncFromServer() {
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return; }
+  // Noch nicht hochgeladene eigene Änderungen haben Vorrang: Erst hochladen, sonst würde
+  // der ältere Server-Stand sie gleich wieder überschreiben (= stiller Datenverlust).
+  if (pendingUpload) { await uploadNow(); return; }
   try {
     const key = encodeURIComponent(state.settings.apiKey);
-    const res = await fetch("api.php?action=load&key=" + key, {
+    const res = await apiFetch("api.php?action=load&key=" + key, {
       cache: "no-store",
       headers: { "X-Api-Key": state.settings.apiKey }
     });
@@ -597,6 +658,9 @@ async function syncFromServer() {
       setSyncStatus("ok");
       return; // NAS hat noch keine Daten -> lokalen Stand einmalig hochladen
     }
+    // Während die Antwort unterwegs war, kann etwas eingetragen worden sein - dann gilt
+    // wieder: eigene Änderungen zuerst, niemals überschreiben.
+    if (pendingUpload) { await uploadNow(); return; }
     if (JSON.stringify(serverState) === JSON.stringify(state)) { setSyncStatus("ok"); return; }
     const workingKey = state.settings.apiKey;
     state = mergeWithDefaults(serverState);
@@ -609,7 +673,7 @@ async function syncFromServer() {
     renderAll();
     setSyncStatus("ok");
   } catch {
-    setSyncStatus("error");
+    setSyncStatus(offlineNow() ? "offline" : "error");
   }
 }
 function setSyncStatus(kind) {
@@ -629,9 +693,15 @@ function setSyncStatus(kind) {
   } else if (kind === "wrongkey") {
     el.textContent = "⚠️ API-Schlüssel stimmt nicht mit dem auf dem NAS überein";
     el.style.color = "var(--critical)";
+  } else if (kind === "offline") {
+    el.textContent = "📴 Offline – eure Änderungen sind gespeichert und werden automatisch übertragen, sobald wieder Verbindung besteht";
+    el.style.color = "var(--text-secondary)";
   } else {
-    el.textContent = "⚠️ NAS nicht erreichbar – Änderungen bleiben lokal gespeichert";
-    el.style.color = "var(--critical)";
+    // Kein Grund zur Sorge: Der Upload wird automatisch wiederholt, bis er klappt.
+    el.textContent = pendingUpload
+      ? "🕒 Noch nicht übertragen – eure Änderungen sind gespeichert, es wird automatisch erneut versucht"
+      : "⚠️ NAS gerade nicht erreichbar – wird automatisch erneut versucht";
+    el.style.color = "var(--text-secondary)";
   }
 }
 // Versucht, aus einer fehlgeschlagenen Antwort von api.php eine genauere Fehlerursache
@@ -1645,13 +1715,27 @@ document.getElementById("expDate").value = currentMonth;
 renderAll();
 window.addEventListener("resize", () => renderCosts());
 
+// Beim Aufwachen des Handys ist das WLAN oft erst ein bis mehrere Sekunden später wieder
+// verbunden. Ein einzelner Sync-Versuch würde dann scheitern und unnötig eine Fehlermeldung
+// zeigen - deshalb direkt und zusätzlich zeitversetzt noch einmal versuchen.
+function syncAfterWake() {
+  if (document.hidden) return;
+  syncFromServer();
+  setTimeout(() => { if (!document.hidden) syncFromServer(); }, 1500);
+  setTimeout(() => { if (!document.hidden) syncFromServer(); }, 5000);
+}
+
 syncFromServer();
 setInterval(() => { if (!document.hidden) syncFromServer(); }, 20000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) syncFromServer(); });
+document.addEventListener("visibilitychange", syncAfterWake);
 // iOS friert als Homebildschirm-App gestartete Seiten beim Wechsel in den Hintergrund oft ein,
 // statt sie neu zu laden. "pageshow" feuert zuverlässig auch bei einem solchen Aufwachen
 // (anders als "visibilitychange", das dabei manchmal ausbleibt) und stößt dann einen frischen Sync an.
-window.addEventListener("pageshow", () => { if (!document.hidden) syncFromServer(); });
+window.addEventListener("pageshow", syncAfterWake);
+// Sobald das Gerät wieder eine Netzwerkverbindung meldet, sofort nachholen statt bis zum
+// nächsten regulären Abgleich zu warten.
+window.addEventListener("online", syncAfterWake);
+window.addEventListener("offline", () => setSyncStatus("offline"));
 </script>
 </body>
 </html>
