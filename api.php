@@ -20,11 +20,43 @@ header('Content-Type: application/json; charset=utf-8');
 $API_KEY = 'BITTE-EIGENEN-SCHLUESSEL-EINTRAGEN';
 
 $DATA_FILE = __DIR__ . '/data.json';
+$BACKUP_DIR = __DIR__ . '/backups';
+$BACKUP_KEEP = 50; // Anzahl der zuletzt aufbewahrten Sicherungen
 
 function respond($code, $data) {
     http_response_code($code);
     echo json_encode($data);
     exit;
+}
+
+// Sichert den aktuellen data.json-Inhalt als Zeitstempel-Kopie, bevor er überschrieben
+// wird - so lässt sich ein versehentliches Überschreiben (z. B. durch ein Gerät mit
+// veraltetem lokalem Stand) über File Station manuell wieder rückgängig machen.
+function backupBeforeOverwrite($dataFile, $backupDir, $keep) {
+    if (!file_exists($dataFile)) {
+        return;
+    }
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    if (!is_dir($backupDir)) {
+        return; // Ordner konnte nicht angelegt werden (z. B. fehlende Schreibrechte) - Backup einfach auslassen
+    }
+    // Mikrosekunden-Suffix, damit mehrere Sicherungen innerhalb derselben Sekunde
+    // (z. B. durch mehrere schnell aufeinanderfolgende Änderungen) sich nicht gegenseitig
+    // überschreiben, aber der Dateiname trotzdem chronologisch sortierbar bleibt.
+    $stamp = date('Y-m-d_His') . '_' . sprintf('%06d', (int) (microtime(true) * 1000000) % 1000000);
+    @copy($dataFile, $backupDir . '/data_' . $stamp . '.json');
+
+    $files = glob($backupDir . '/data_*.json');
+    if ($files === false) {
+        return;
+    }
+    sort($files);
+    $excess = count($files) - $keep;
+    for ($i = 0; $i < $excess; $i++) {
+        @unlink($files[$i]);
+    }
 }
 
 if (strlen($API_KEY) < 8) {
@@ -59,6 +91,7 @@ if ($method === 'POST') {
     if ($decoded === null && trim($raw) !== 'null') {
         respond(400, array('error' => 'invalid_json'));
     }
+    backupBeforeOverwrite($DATA_FILE, $BACKUP_DIR, $BACKUP_KEEP);
     $ok = file_put_contents($DATA_FILE, $raw, LOCK_EX);
     if ($ok === false) {
         respond(500, array('error' => 'write_failed'));

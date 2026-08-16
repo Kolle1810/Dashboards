@@ -51,3 +51,22 @@ Ganz unten im Dashboard zeigt ein kleiner Hinweis den Synchronisierungsstatus an
 Unter ⚙️ Einstellungen → „Daten sichern & teilen“ könnt ihr jederzeit
 zusätzlich eine Sicherungsdatei herunterladen – nützlich als Backup oder um
 die Daten notfalls manuell auf ein neues Gerät zu übertragen.
+
+Zusätzlich legt `api.php` bei **jeder** Änderung automatisch eine Kopie des
+bisherigen Datenstands im Ordner `backups/` an (die letzten 50 Versionen),
+bevor `data.json` überschrieben wird. Das schützt vor dem Fall, dass ein
+Gerät mit veraltetem lokalem Stand synchronisiert und dabei neuere Einträge
+überschreibt (siehe oben: „gewinnt die zuletzt gespeicherte Version“).
+
+**Wiederherstellen, falls doch mal Daten fehlen:**
+
+1. Auf dem NAS über **File Station** in den Web-Ordner → `backups/` wechseln.
+2. Die Dateien heißen `data_JAHR-MONAT-TAG_ZEIT_....json` und sind
+   chronologisch sortiert – die unterste/neueste Datei vor dem Datenverlust
+   enthält vermutlich den zuletzt noch vollständigen Stand. Am besten mehrere
+   der letzten Dateien der Reihe nach mit einem Texteditor kurz gegenchecken.
+3. Die passende Backup-Datei in den Web-Ordner **kopieren** (nicht
+   verschieben) und dort in `data.json` **umbenennen** (bestehende
+   `data.json` vorher sicherheitshalber umbenennen statt löschen).
+4. Das Dashboard auf einem Gerät neu laden bzw. im Header auf 🔄 tippen –
+   der wiederhergestellte Stand wird jetzt geladen und an alle Geräte verteilt.
