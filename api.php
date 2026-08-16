@@ -59,8 +59,8 @@ function backupBeforeOverwrite($dataFile, $backupDir, $keep) {
     }
 }
 
-if (strlen($API_KEY) < 8) {
-    respond(500, array('error' => 'server_not_configured', 'hint' => 'Bitte in api.php einen eigenen API_KEY eintragen (mindestens 8 Zeichen).'));
+if ($API_KEY === 'BITTE-EIGENEN-SCHLUESSEL-EINTRAGEN' || strlen($API_KEY) < 8) {
+    respond(500, array('error' => 'server_not_configured', 'hint' => 'In api.php auf dem NAS steht noch der Platzhalter statt eures eigenen API_KEY (mindestens 8 Zeichen). Das passiert leicht, wenn api.php neu hochgeladen wurde - bitte den Schlüssel dort wieder eintragen (zu finden im Dashboard unter Einstellungen -> Geräteübergreifende Synchronisierung).'));
 }
 // Manche Webserver/PHP-Einbindungen entfernen individuelle Header wie
 // X-Api-Key auf dem Weg zu PHP - deshalb zusätzlich als URL-Parameter
