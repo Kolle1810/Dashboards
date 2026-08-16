@@ -506,6 +506,13 @@
     </div>
 
     <div class="card">
+      <h2>🛟 Sicherungen auf dem NAS</h2>
+      <p class="hint">Vor jeder Änderung legt das NAS automatisch eine Sicherung an. Falls versehentlich etwas gelöscht wurde oder Daten fehlen, könnt ihr hier einen früheren Stand zurückholen – der aktuelle Stand wird dabei vorher ebenfalls gesichert.</p>
+      <button class="ghost" id="loadBackupsBtn">🔄 Sicherungen anzeigen</button>
+      <div id="backupList" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
       <h2>Daten sichern &amp; teilen</h2>
       <p class="hint">Eure Daten werden automatisch mit eurem NAS abgeglichen (sobald der API-Schlüssel oben eingetragen ist). Zusätzlich könnt ihr hier eine Sicherungsdatei herunterladen – praktisch als Backup oder falls das NAS mal nicht erreichbar ist.</p>
       <div class="row" style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -1659,6 +1666,90 @@ document.getElementById("apiKeyForm").addEventListener("submit", e => {
   save(); renderAll();
   syncFromServer();
   alert("Gespeichert! Wird jetzt mit dem NAS abgeglichen.");
+});
+
+/* ---------- Sicherungen auf dem NAS ansehen & wiederherstellen ---------- */
+// Wandelt "data_2026-08-16_211506_123456.json" in "16.08.2026, 21:15:06" um.
+function backupLabel(name) {
+  const m = /^data_(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})_/.exec(name);
+  if (!m) return name;
+  return `${m[3]}.${m[2]}.${m[1]}, ${m[4]}:${m[5]}:${m[6]}`;
+}
+function summaryText(s) {
+  if (!s || !s.readable) return "Inhalt nicht lesbar";
+  const parts = [];
+  const add = (n, one, many) => { if (n) parts.push(n + " " + (n === 1 ? one : many)); };
+  add(s.expenses, "Ausgabe", "Ausgaben");
+  add(s.fixedCosts, "Fixkosten-Position", "Fixkosten-Positionen");
+  add(s.todos, "To-do", "To-dos");
+  add(s.protocols, "Protokoll", "Protokolle");
+  add(s.topics, "Thema", "Themen");
+  add(s.projects, "Projekt", "Projekte");
+  add(s.gifts, "Wunsch-Idee", "Wunsch-Ideen");
+  return parts.length ? parts.join(" · ") : "leer – keine Einträge";
+}
+async function loadBackupList() {
+  const el = document.getElementById("backupList");
+  if (!state.settings.apiKey.trim()) {
+    el.innerHTML = `<div class="empty">Dafür muss oben zuerst der API-Schlüssel eingetragen sein.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="empty">Lade Sicherungen vom NAS …</div>`;
+  try {
+    const key = encodeURIComponent(state.settings.apiKey);
+    const res = await apiFetch("api.php?action=backups&key=" + key, {
+      cache: "no-store",
+      headers: { "X-Api-Key": state.settings.apiKey }
+    });
+    if (!res.ok) {
+      el.innerHTML = `<div class="empty">Sicherungen konnten nicht geladen werden. Liegt auf dem NAS schon die neueste <code>api.php</code>?</div>`;
+      return;
+    }
+    const data = await res.json();
+    const list = (data && data.backups) || [];
+    const current = data && data.current;
+    const currentLine = current
+      ? `<p class="hint" style="margin:0 0 10px;">Aktuell auf dem NAS: <b>${esc(summaryText(current))}</b></p>`
+      : "";
+    if (!list.length) {
+      el.innerHTML = currentLine + `<div class="empty">Noch keine Sicherungen vorhanden.</div>`;
+      return;
+    }
+    el.innerHTML = currentLine + `<ul class="plain">` + list.map(b => `
+      <li>
+        <span class="grow"><b>${esc(backupLabel(b.name))}</b><br>
+          <span style="color:var(--text-muted); font-size:12px;">${esc(summaryText(b.summary))}</span></span>
+        <button class="ghost" data-restore="${esc(b.name)}">Wiederherstellen</button>
+      </li>`).join("") + `</ul>
+      <p class="hint" style="margin-top:10px;">Die Uhrzeiten stammen vom NAS und können von der Uhrzeit eures Handys abweichen. Neueste zuerst.</p>`;
+  } catch {
+    el.innerHTML = `<div class="empty">NAS gerade nicht erreichbar.</div>`;
+  }
+}
+document.getElementById("loadBackupsBtn").addEventListener("click", loadBackupList);
+document.getElementById("backupList").addEventListener("click", async e => {
+  const btn = e.target.closest("[data-restore]");
+  if (!btn) return;
+  const name = btn.dataset.restore;
+  if (!confirm("Diesen Stand wiederherstellen?\n\n" + backupLabel(name) + "\n\nDer aktuelle Stand wird vorher automatisch gesichert und geht nicht verloren.")) return;
+  try {
+    const key = encodeURIComponent(state.settings.apiKey);
+    const res = await apiFetch("api.php?action=restore&file=" + encodeURIComponent(name) + "&key=" + key, {
+      method: "POST",
+      headers: { "X-Api-Key": state.settings.apiKey }
+    });
+    if (!res.ok) { alert("Wiederherstellen hat leider nicht geklappt."); return; }
+    // Der Server ist jetzt maßgeblich: nichts Lokales mehr als ausstehend behandeln,
+    // sonst würde der gerade wiederhergestellte Stand sofort wieder überschrieben.
+    setPendingUpload(false);
+    clearRetry();
+    await syncFromServer();
+    renderAll();
+    await loadBackupList();
+    alert("Fertig! Der Stand vom " + backupLabel(name) + " ist wieder da.\n\nBitte öffnet das Dashboard auf euren anderen Geräten einmal neu.");
+  } catch {
+    alert("NAS gerade nicht erreichbar.");
+  }
 });
 
 document.getElementById("exportBtn").addEventListener("click", () => {

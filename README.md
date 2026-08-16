@@ -60,13 +60,17 @@ Gerät mit veraltetem lokalem Stand synchronisiert und dabei neuere Einträge
 
 **Wiederherstellen, falls doch mal Daten fehlen:**
 
-1. Auf dem NAS über **File Station** in den Web-Ordner → `backups/` wechseln.
-2. Die Dateien heißen `data_JAHR-MONAT-TAG_ZEIT_....json` und sind
-   chronologisch sortiert – die unterste/neueste Datei vor dem Datenverlust
-   enthält vermutlich den zuletzt noch vollständigen Stand. Am besten mehrere
-   der letzten Dateien der Reihe nach mit einem Texteditor kurz gegenchecken.
-3. Die passende Backup-Datei in den Web-Ordner **kopieren** (nicht
-   verschieben) und dort in `data.json` **umbenennen** (bestehende
-   `data.json` vorher sicherheitshalber umbenennen statt löschen).
-4. Das Dashboard auf einem Gerät neu laden bzw. im Header auf 🔄 tippen –
-   der wiederhergestellte Stand wird jetzt geladen und an alle Geräte verteilt.
+Am einfachsten direkt im Dashboard unter **⚙️ Einstellungen → „🛟 Sicherungen
+auf dem NAS“** → „Sicherungen anzeigen“. Dort steht zu jeder Sicherung, was
+sie enthält (z. B. „12 Ausgaben · 5 To-dos · 2 Projekte“) – so ist ohne
+Dateisuche erkennbar, welcher Stand der richtige ist. Ein Klick auf
+„Wiederherstellen“ genügt; der aktuelle Stand wird dabei vorher automatisch
+zusätzlich gesichert, die Wiederherstellung lässt sich also selbst wieder
+rückgängig machen. Danach die anderen Geräte einmal neu öffnen.
+
+Alternativ von Hand über **File Station**: die passende Datei aus `backups/`
+in den Web-Ordner kopieren und in `data.json` umbenennen (die bestehende
+`data.json` vorher umbenennen statt löschen).
+
+> Hinweis: Die Uhrzeit im Dateinamen stammt vom NAS und kann von der in
+> File Station angezeigten Uhrzeit abweichen (unterschiedliche Zeitzonen).

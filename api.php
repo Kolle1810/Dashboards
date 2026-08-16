@@ -74,6 +74,89 @@ if (!hash_equals($API_KEY, $providedKey)) {
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+
+// Nur exakt die selbst erzeugten Sicherungsnamen zulassen - verhindert, dass über den
+// Dateinamen beliebige andere Dateien vom NAS gelesen oder überschrieben werden.
+function safeBackupName($name) {
+    return preg_match('/^data_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{6}_[0-9]{6}\.json$/', $name) ? $name : null;
+}
+
+// Kurzfassung des Inhalts, damit im Dashboard erkennbar ist, welche Sicherung die
+// gesuchte ist, ohne jede Datei einzeln öffnen zu müssen.
+function summarize($json) {
+    $d = json_decode($json, true);
+    if (!is_array($d)) {
+        return array('readable' => false);
+    }
+    $countOf = function ($v) { return is_array($v) ? count($v) : 0; };
+    $gifts = isset($d['gifts']) && is_array($d['gifts']) ? $d['gifts'] : array();
+    return array(
+        'readable'   => true,
+        'expenses'   => $countOf(isset($d['expenses']) ? $d['expenses'] : null),
+        'todos'      => $countOf(isset($d['todos']) ? $d['todos'] : null),
+        'protocols'  => $countOf(isset($d['protocols']) ? $d['protocols'] : null),
+        'topics'     => $countOf(isset($d['topics']) ? $d['topics'] : null),
+        'projects'   => $countOf(isset($d['projects']) ? $d['projects'] : null),
+        'fixedCosts' => $countOf(isset($d['fixedCosts']) ? $d['fixedCosts'] : null),
+        'gifts'      => $countOf(isset($gifts['A']) ? $gifts['A'] : null)
+                      + $countOf(isset($gifts['B']) ? $gifts['B'] : null)
+                      + $countOf(isset($gifts['others']) ? $gifts['others'] : null)
+    );
+}
+
+if ($method === 'GET' && $action === 'backups') {
+    $out = array();
+    $files = is_dir($BACKUP_DIR) ? glob($BACKUP_DIR . '/data_*.json') : array();
+    if ($files === false) { $files = array(); }
+    rsort($files); // neueste zuerst
+    foreach ($files as $f) {
+        $name = basename($f);
+        if (safeBackupName($name) === null) { continue; }
+        $content = file_get_contents($f);
+        $out[] = array(
+            'name'    => $name,
+            'size'    => filesize($f),
+            'summary' => summarize($content !== false ? $content : '')
+        );
+    }
+    // Auch den aktuellen Stand mitliefern, damit sich beides direkt vergleichen lässt.
+    $currentSummary = null;
+    if (file_exists($DATA_FILE)) {
+        $cur = file_get_contents($DATA_FILE);
+        $currentSummary = summarize($cur !== false ? $cur : '');
+    }
+    respond(200, array('backups' => $out, 'current' => $currentSummary));
+}
+
+if ($method === 'GET' && $action === 'backup') {
+    $name = safeBackupName(isset($_GET['file']) ? $_GET['file'] : '');
+    if ($name === null) { respond(400, array('error' => 'invalid_name')); }
+    $path = $BACKUP_DIR . '/' . $name;
+    if (!file_exists($path)) { respond(404, array('error' => 'not_found')); }
+    $content = file_get_contents($path);
+    http_response_code(200);
+    echo ($content !== false && trim($content) !== '') ? $content : '{}';
+    exit;
+}
+
+if ($method === 'POST' && $action === 'restore') {
+    $name = safeBackupName(isset($_GET['file']) ? $_GET['file'] : '');
+    if ($name === null) { respond(400, array('error' => 'invalid_name')); }
+    $path = $BACKUP_DIR . '/' . $name;
+    if (!file_exists($path)) { respond(404, array('error' => 'not_found')); }
+    $content = file_get_contents($path);
+    if ($content === false || json_decode($content) === null) {
+        respond(400, array('error' => 'invalid_backup'));
+    }
+    // Auch den aktuellen (womöglich kaputten) Stand vorher sichern - eine
+    // Wiederherstellung soll nie der letzte unumkehrbare Schritt sein.
+    backupBeforeOverwrite($DATA_FILE, $BACKUP_DIR, $BACKUP_KEEP);
+    if (file_put_contents($DATA_FILE, $content, LOCK_EX) === false) {
+        respond(500, array('error' => 'write_failed'));
+    }
+    respond(200, array('ok' => true, 'restored' => $name));
+}
 
 if ($method === 'GET') {
     if (!file_exists($DATA_FILE)) {
