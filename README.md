@@ -9,7 +9,7 @@ Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
 |---|---|
 | **Übersicht** | Die wichtigsten Zahlen auf einen Blick: Ausgaben, wer wem etwas schuldet, offene To-dos |
 | **Meetings** | Themenliste fürs nächste Paar-Meeting + Protokolle vergangener Meetings |
-| **Kosten** | Ausgaben eintragen (wer hat bezahlt?, ggf. „nicht teilen“), Monatsübersicht mit Diagramm und automatischer 50/50-Abrechnung |
+| **Kosten** | Ausgaben eintragen (wer hat bezahlt? wer trägt die Kosten: beide je 50 % oder eine*r zu 100 %), Monatsübersicht mit Diagramm und automatischer Abrechnung |
 | **To-dos** | Wochenaufgaben mit Zuordnung (wer macht's?), Datum, Frist und „sehr wichtig“-Markierung zum Abhaken |
 | **Wunschlisten** | Eure eigene Wunschliste + eine dritte Liste für Geschenkideen für andere |
 | **Projekte** | Größere Vorhaben (Urlaub, Haus …) mit Checklisten, Fortschrittsbalken und Archiv für erledigte Schritte |

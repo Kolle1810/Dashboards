@@ -314,9 +314,8 @@
         <button class="primary" type="submit" id="expSubmitBtn">Eintragen</button>
         <button class="ghost" type="button" id="expCancelBtn" style="display:none;">Abbrechen</button>
       </form>
-      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
-        <input type="checkbox" id="expSolo">
-        Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
+      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px; flex-wrap:wrap;">
+        Wer trägt die Kosten? <select id="expBearer"></select>
       </label>
     </div>
 
@@ -339,9 +338,8 @@
         <button class="primary" type="submit" id="fcSubmitBtn">Hinzufügen</button>
         <button class="ghost" type="button" id="fcCancelBtn" style="display:none;">Abbrechen</button>
       </form>
-      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px;">
-        <input type="checkbox" id="fcSolo">
-        Nicht teilen – zahlende Person trägt die vollen 100&nbsp;%
+      <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); margin-top:2px; flex-wrap:wrap;">
+        Wer trägt die Kosten? <select id="fcBearer"></select>
       </label>
       <ul class="plain" id="fixedCostList" style="margin-top:12px;"></ul>
     </div>
@@ -545,8 +543,10 @@ const defaultState = () => ({
   settings: { nameA: "Kolja", nameB: "Carina", apiKey: "" },
   topics: [],      // {id, text, done}
   protocols: [],   // {id, date, title, notes}
-  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, shared, fixedCostId?}
-  fixedCosts: [],  // {id, desc, amount, payer:'A'|'B', category, shared} - wird automatisch jeden Monat als Ausgabe eingetragen
+  // bearer: 'both' (je 50 %) | 'A' | 'B' (diese Person trägt 100 %) - unabhängig davon, wer bezahlt hat.
+  // shared wird nur noch zusätzlich mitgeführt, damit ältere Fassungen des Dashboards klarkommen.
+  expenses: [],    // {id, date:'YYYY-MM', desc, amount, payer:'A'|'B', category, bearer, shared, fixedCostId?}
+  fixedCosts: [],  // {id, desc, amount, payer:'A'|'B', category, bearer, shared} - wird automatisch jeden Monat als Ausgabe eingetragen
   todos: [],       // {id, text, who:'A'|'B'|'both', date, deadline, important, done}
   gifts: { A: [], B: [], others: [] }, // Wunschliste A/B + Ideen für andere
   projects: []     // {id, name, notes, items:[{id,text,done}]}
@@ -988,18 +988,30 @@ function shiftMonth(ym, delta) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
 }
 function monthExpenses(ym) { return state.expenses.filter(e => e.date.startsWith(ym)); }
+// Wer trägt eine Ausgabe wirtschaftlich? "both" = je 50 %, "A"/"B" = diese Person zu 100 %.
+// Ältere Einträge kennen nur shared:false ("die zahlende Person trägt alles") - das wird
+// hier auf den neuen Aufbau abgebildet, damit alte Daten unverändert weiterrechnen.
+function bearerOf(e) {
+  if (e.bearer === "A" || e.bearer === "B" || e.bearer === "both") return e.bearer;
+  return e.shared === false ? e.payer : "both";
+}
+// Anteil, den Person A an dieser Ausgabe wirtschaftlich zu tragen hat.
+function shareOfA(e) {
+  const b = bearerOf(e);
+  return b === "both" ? e.amount / 2 : (b === "A" ? e.amount : 0);
+}
 function monthTotals(ym) {
   const list = monthExpenses(ym);
   const total  = list.reduce((s, e) => s + e.amount, 0);
   const totalA = list.filter(e => e.payer === "A").reduce((s, e) => s + e.amount, 0);
-  const shared = list.filter(e => e.shared !== false);
-  const sharedTotal  = shared.reduce((s, e) => s + e.amount, 0);
-  const sharedTotalA = shared.filter(e => e.payer === "A").reduce((s, e) => s + e.amount, 0);
-  const soloCount = list.length - shared.length;
-  return { total, totalA, totalB: total - totalA, sharedTotal, sharedTotalA, soloCount };
+  // Ausgleich = was A bezahlt hat, minus was A eigentlich tragen müsste.
+  const owedA = list.reduce((s, e) => s + shareOfA(e), 0);
+  const soloCount = list.filter(e => bearerOf(e) !== "both").length;
+  return { total, totalA, totalB: total - totalA, owedA, soloCount };
 }
-function saldoText(total, totalA) {
-  const diff = totalA - total / 2; // >0: A hat mehr bezahlt
+// paidA = was A tatsächlich bezahlt hat, owedA = was A davon tragen müsste.
+function saldoText(paidA, owedA) {
+  const diff = paidA - owedA; // >0: A hat mehr bezahlt, als A tragen müsste
   if (Math.abs(diff) < 0.005 ) return `<span class="saldo-good">Ausgeglichen ✔</span>`;
   const debtor  = diff > 0 ? state.settings.nameB : state.settings.nameA;
   const creditor = diff > 0 ? state.settings.nameA : state.settings.nameB;
@@ -1014,7 +1026,7 @@ function resetExpenseForm() {
   editingExpenseId = null;
   document.getElementById("expDesc").value = "";
   document.getElementById("expAmount").value = "";
-  document.getElementById("expSolo").checked = false;
+  document.getElementById("expBearer").value = "both";
   document.getElementById("expDate").value = currentMonth;
   document.getElementById("expSubmitBtn").textContent = "Eintragen";
   document.getElementById("expCancelBtn").style.display = "none";
@@ -1029,7 +1041,10 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
     amount,
     payer: document.getElementById("expPayer").value,
     category: document.getElementById("expCategory").value,
-    shared: !document.getElementById("expSolo").checked
+    bearer: document.getElementById("expBearer").value,
+    // "shared" bleibt zusätzlich gepflegt, damit Geräte mit einer älteren Fassung des
+    // Dashboards die Ausgabe weiterhin sinnvoll behandeln.
+    shared: document.getElementById("expBearer").value === "both"
   };
   if (editingExpenseId) {
     Object.assign(state.expenses.find(x => x.id === editingExpenseId), fields);
@@ -1047,7 +1062,7 @@ function resetFixedCostForm() {
   editingFixedCostId = null;
   document.getElementById("fcDesc").value = "";
   document.getElementById("fcAmount").value = "";
-  document.getElementById("fcSolo").checked = false;
+  document.getElementById("fcBearer").value = "both";
   document.getElementById("fcSubmitBtn").textContent = "Hinzufügen";
   document.getElementById("fcCancelBtn").style.display = "none";
 }
@@ -1060,7 +1075,8 @@ document.getElementById("fixedCostForm").addEventListener("submit", e => {
     amount,
     payer: document.getElementById("fcPayer").value,
     category: document.getElementById("fcCategory").value,
-    shared: !document.getElementById("fcSolo").checked
+    bearer: document.getElementById("fcBearer").value,
+    shared: document.getElementById("fcBearer").value === "both"
   };
   if (editingFixedCostId) {
     Object.assign(state.fixedCosts.find(x => x.id === editingFixedCostId), fields);
@@ -1078,7 +1094,7 @@ function renderFixedCostList() {
     <li>
       <span class="who-dot who-${fc.payer.toLowerCase()}" title="${esc(nameOf(fc.payer))}"></span>
       <span class="grow">${esc(fc.desc)} <span style="color:var(--text-muted); font-size:12px;">(${esc(fc.category)})</span></span>
-      ${fc.shared === false ? `<span class="badge solo">100%</span>` : ""}
+      ${bearerOf(fc) !== "both" ? `<span class="badge solo">100 % ${esc(nameOf(bearerOf(fc)))}</span>` : ""}
       <span class="badge">${eur.format(fc.amount)}</span>
       <button class="icon" data-edit-fc="${fc.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-fc="${fc.id}" title="Entfernen">✕</button>
@@ -1092,7 +1108,7 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
     document.getElementById("fcAmount").value = fc.amount.toFixed(2).replace(".", ",");
     document.getElementById("fcPayer").value = fc.payer;
     document.getElementById("fcCategory").value = fc.category;
-    document.getElementById("fcSolo").checked = fc.shared === false;
+    document.getElementById("fcBearer").value = bearerOf(fc);
     editingFixedCostId = fc.id;
     document.getElementById("fcSubmitBtn").textContent = "Speichern";
     document.getElementById("fcCancelBtn").style.display = "";
@@ -1119,7 +1135,7 @@ function materializeFixedCosts(ym) {
     if (fc.skipMonths && fc.skipMonths.includes(ym)) return; // Nutzer hat den Eintrag für diesen Monat bewusst gelöscht
     const exists = state.expenses.some(e => e.fixedCostId === fc.id && e.date === ym);
     if (!exists) {
-      state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, shared: fc.shared !== false, fixedCostId: fc.id });
+      state.expenses.push({ id: uid(), date: ym, desc: fc.desc, amount: fc.amount, payer: fc.payer, category: fc.category, bearer: bearerOf(fc), shared: bearerOf(fc) === "both", fixedCostId: fc.id });
       added = true;
     }
   });
@@ -1134,15 +1150,15 @@ function renderCosts() {
   materializeFixedCosts(currentMonth);
   renderFixedCostList();
   document.getElementById("monthLabel").textContent = monthName(currentMonth);
-  const { total, totalA, totalB, sharedTotal, sharedTotalA, soloCount } = monthTotals(currentMonth);
+  const { total, totalA, totalB, owedA, soloCount } = monthTotals(currentMonth);
   document.getElementById("costTotal").textContent = eur.format(total);
   document.getElementById("costLabelA").textContent = state.settings.nameA + " hat bezahlt";
   document.getElementById("costLabelB").textContent = state.settings.nameB + " hat bezahlt";
   document.getElementById("costTotalA").textContent = eur.format(totalA);
   document.getElementById("costTotalB").textContent = eur.format(totalB);
-  document.getElementById("costSaldo").innerHTML = saldoText(sharedTotal, sharedTotalA);
+  document.getElementById("costSaldo").innerHTML = saldoText(totalA, owedA);
   document.getElementById("costSaldoSub").textContent = soloCount
-    ? `bei 50/50 – ${soloCount} Ausgabe${soloCount > 1 ? "n" : ""} nicht geteilt`
+    ? `${soloCount} Ausgabe${soloCount > 1 ? "n" : ""} nicht 50/50 geteilt`
     : "damit es fair (50/50) ist";
 
   // Legende
@@ -1164,7 +1180,7 @@ function renderExpenseTable() {
     <tr>
       <td>${esc(e.desc)}${e.fixedCostId ? ` <span class="badge" title="Automatisch aus Fixkosten eingetragen">🔁</span>` : ""}</td>
       <td><span class="badge">${esc(e.category)}</span></td>
-      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${e.shared === false ? ` <span class="badge solo">100%</span>` : ""}</span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${bearerOf(e) !== "both" ? ` <span class="badge solo">100 % ${esc(nameOf(bearerOf(e)))}</span>` : ""}</span></td>
       <td class="num">${eur.format(e.amount)}</td>
       <td>
         <button class="icon" data-edit-exp="${e.id}" title="Bearbeiten">✏️</button>
@@ -1183,7 +1199,7 @@ document.getElementById("expenseTable").addEventListener("click", e => {
     document.getElementById("expAmount").value = x.amount.toFixed(2).replace(".", ",");
     document.getElementById("expPayer").value = x.payer;
     document.getElementById("expCategory").value = x.category;
-    document.getElementById("expSolo").checked = x.shared === false;
+    document.getElementById("expBearer").value = bearerOf(x);
     editingExpenseId = x.id;
     document.getElementById("expSubmitBtn").textContent = "Speichern";
     document.getElementById("expCancelBtn").style.display = "";
@@ -1841,6 +1857,17 @@ function fillSelects() {
   const payerHtml = `<option value="A">${esc(state.settings.nameA)}</option><option value="B">${esc(state.settings.nameB)}</option>`;
   document.getElementById("expPayer").innerHTML = payerHtml;
   document.getElementById("fcPayer").innerHTML = payerHtml;
+  // "Wer trägt die Kosten?" - je 50 %, oder eine der beiden Personen zu 100 %.
+  // Die aktuelle Auswahl wird beibehalten, damit sie beim Neuzeichnen nicht verlorengeht.
+  const bearerHtml = `<option value="both">Beide je 50 %</option>` +
+    `<option value="A">Nur ${esc(state.settings.nameA)} (100 %)</option>` +
+    `<option value="B">Nur ${esc(state.settings.nameB)} (100 %)</option>`;
+  for (const id of ["expBearer", "fcBearer"]) {
+    const el = document.getElementById(id);
+    const keep = el.value || "both";
+    el.innerHTML = bearerHtml;
+    el.value = keep;
+  }
   document.getElementById("todoWho").innerHTML = payerHtml + `<option value="both">Beide</option>`;
   document.getElementById("nameA").value = state.settings.nameA;
   document.getElementById("nameB").value = state.settings.nameB;
