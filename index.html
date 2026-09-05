@@ -119,22 +119,44 @@
   .rt.multiline { min-height: 76px; width: 100%; }
   .rt a, .rich a { color: var(--series-a); }
 
+  /* Aufzählungen innerhalb formatierter Texte - sowohl im Eingabefeld als auch in der Anzeige. */
+  .rt ul, .rt ol,
+  .grow ul, .grow ol,
+  .p-body ul, .p-body ol,
+  .p-notes ul, .p-notes ol,
+  .p-title ul, .p-title ol,
+  table.data td ul, table.data td ol {
+    margin: 4px 0; padding-left: 22px; list-style-position: outside; width: 100%;
+  }
+  .rt ul, .grow ul, .p-body ul, .p-notes ul, .p-title ul, table.data td ul { list-style-type: disc; }
+  .rt ol, .grow ol, .p-body ol, .p-notes ol, .p-title ol, table.data td ol { list-style-type: decimal; }
+  /* Die Aufzählungen stehen in Einträgen von ul.plain, deren Flex-Layout und Trennlinien
+     sonst auch für die verschachtelten Punkte gelten würden. */
+  ul.plain li ul li, ul.plain li ol li,
+  .rt ul li, .rt ol li,
+  .p-body ul li, .p-body ol li {
+    display: list-item; padding: 0; border-bottom: none; gap: 0; align-items: initial;
+  }
+
   /* Gemeinsame Formatierungsleiste - erscheint nur, während ein Feld bearbeitet wird */
   #rtToolbar {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 12px;
-    display: none; flex-wrap: wrap; align-items: center; gap: 6px;
+    display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); z-index: 30;
-    max-width: calc(100vw - 20px);
+    padding: 7px 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); z-index: 30;
+    /* Feste Breite statt "so schmal wie möglich": Sonst bricht die Leiste unnötig oft um
+       und nimmt auf dem Handy zu viel Platz ein. */
+    width: calc(100vw - 16px); max-width: 560px;
   }
   #rtToolbar.show { display: flex; }
-  #rtToolbar select { padding: 5px 6px; font-size: 13px; }
+  #rtToolbar select { padding: 4px 4px; font-size: 12px; max-width: 104px; }
   #rtToolbar button {
     background: var(--page); border: 1px solid var(--border); border-radius: 7px;
-    padding: 5px 9px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text-primary);
+    padding: 4px 8px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text-primary);
+    white-space: nowrap;
   }
   #rtToolbar button:hover { background: var(--accent-soft); border-color: var(--accent); }
-  #rtToolbar input[type="color"] { width: 34px; height: 30px; padding: 2px; cursor: pointer; }
+  #rtToolbar input[type="color"] { width: 30px; height: 27px; padding: 2px; cursor: pointer; }
   button.primary {
     background: var(--accent); color: var(--accent-ink); border: none; border-radius: 8px;
     padding: 8px 16px; font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 600;
@@ -296,7 +318,7 @@
       <h2>Themenliste fürs nächste Meeting</h2>
       <p class="hint">Sammelt hier alles, was ihr besprechen wollt. Beim Meeting hakt ihr die Punkte einfach ab.</p>
       <form class="row" id="topicForm">
-        <div id="topicInput" class="rt" contenteditable="true" data-placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;"></div>
+        <div id="topicInput" data-lists class="rt" contenteditable="true" data-placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;"></div>
         <button class="primary" type="submit" id="topicSubmitBtn">Hinzufügen</button>
         <button class="ghost" type="button" id="topicCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -309,9 +331,9 @@
       <form id="protocolForm">
         <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
           <input type="date" id="protocolDate" required>
-          <div id="protocolTitle" class="rt" contenteditable="true" data-placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;"></div>
+          <div id="protocolTitle" data-lists class="rt" contenteditable="true" data-placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;"></div>
         </div>
-        <div id="protocolNotes" class="rt multiline" contenteditable="true" data-placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></div>
+        <div id="protocolNotes" data-lists class="rt multiline" contenteditable="true" data-placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></div>
         <div style="margin-top:8px; display:flex; gap:8px;">
           <button class="primary" type="submit" id="protocolSubmitBtn">Protokoll speichern</button>
           <button class="ghost" type="button" id="protocolCancelBtn" style="display:none;">Abbrechen</button>
@@ -427,7 +449,7 @@
       <p class="hint">Wer macht was? Einfach eintragen, zuweisen und abhaken.</p>
       <form id="todoForm">
         <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-          <div id="todoInput" class="rt" contenteditable="true" data-placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;"></div>
+          <div id="todoInput" data-lists class="rt" contenteditable="true" data-placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;"></div>
           <select id="todoWho"></select>
         </div>
         <div class="row" style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:8px;">
@@ -463,7 +485,7 @@
             <span id="giftHeadA">Wunschliste …</span>
           </h3>
           <form class="row" id="giftFormA">
-            <div id="giftInputA" class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
+            <div id="giftInputA" data-lists class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
             <button class="primary" type="submit" id="giftSubmitA">+</button>
             <button class="ghost" type="button" id="giftCancelA" style="display:none;">Abbrechen</button>
           </form>
@@ -474,7 +496,7 @@
             <span id="giftHeadB">Wunschliste …</span>
           </h3>
           <form class="row" id="giftFormB">
-            <div id="giftInputB" class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
+            <div id="giftInputB" data-lists class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
             <button class="primary" type="submit" id="giftSubmitB">+</button>
             <button class="ghost" type="button" id="giftCancelB" style="display:none;">Abbrechen</button>
           </form>
@@ -487,8 +509,8 @@
       <h2>🎉 Geschenkideen für andere</h2>
       <p class="hint">Für Freunde, Familie, Hochzeiten & Co. – damit ihr nie ohne Idee dasteht.</p>
       <form class="row" id="giftFormOthers">
-        <div id="giftInputOthersWho" class="rt" contenteditable="true" data-placeholder="Für wen? z. B. „Hochzeit Lisa &amp; Tom“" style="flex:1; min-width:160px;"></div>
-        <div id="giftInputOthersIdea" class="rt" contenteditable="true" data-placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;"></div>
+        <div id="giftInputOthersWho" data-lists class="rt" contenteditable="true" data-placeholder="Für wen? z. B. „Hochzeit Lisa &amp; Tom“" style="flex:1; min-width:160px;"></div>
+        <div id="giftInputOthersIdea" data-lists class="rt" contenteditable="true" data-placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;"></div>
         <button class="primary" type="submit" id="giftOthersSubmitBtn">+</button>
         <button class="ghost" type="button" id="giftOthersCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -502,8 +524,8 @@
       <h2>Gemeinsame Projekte</h2>
       <p class="hint">Größere Vorhaben wie Urlaub, Umzug oder Haus – jedes Projekt bekommt eine eigene Checkliste mit Fortschrittsanzeige.</p>
       <form class="row" id="projectForm">
-        <div id="projectName" class="rt" contenteditable="true" data-placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;"></div>
-        <div id="projectNotes" class="rt" contenteditable="true" data-placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;"></div>
+        <div id="projectName" data-lists class="rt" contenteditable="true" data-placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;"></div>
+        <div id="projectNotes" data-lists class="rt" contenteditable="true" data-placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;"></div>
         <button class="primary" type="submit" id="projectSubmitBtn">Projekt anlegen</button>
         <button class="ghost" type="button" id="projectCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -578,6 +600,8 @@
   <button type="button" data-rt="bold" title="Fett"><b>F</b></button>
   <button type="button" data-rt="italic" title="Kursiv"><i>K</i></button>
   <button type="button" data-rt="underline" title="Unterstrichen"><u>U</u></button>
+  <button type="button" data-rt="insertUnorderedList" data-lists title="Aufzählung mit Punkten">• Liste</button>
+  <button type="button" data-rt="insertOrderedList" data-lists title="Nummerierte Aufzählung">1. Liste</button>
   <button type="button" data-rt="link" title="Link einfügen">🔗</button>
   <button type="button" data-rt="unlink" title="Link entfernen">🔗✕</button>
   <button type="button" data-rt="clear" title="Formatierung entfernen">✎✕</button>
@@ -859,7 +883,7 @@ const nameOf = who => who === "A" ? state.settings.nameA : who === "B" ? state.s
 // gelangen kann (z. B. über eingefügte Inhalte aus dem Netz), wird beim Anzeigen UND beim
 // Speichern streng gefiltert: Erlaubt sind nur die unten aufgeführten Elemente, Stilangaben
 // und Link-Ziele - alles andere wird auf reinen Text zurückgeführt.
-const RT_ALLOWED_TAGS = ["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "SPAN", "A", "DIV", "P", "FONT"];
+const RT_ALLOWED_TAGS = ["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "SPAN", "A", "DIV", "P", "FONT", "UL", "OL", "LI"];
 const RT_ALLOWED_STYLES = ["color", "background-color", "font-size", "font-family", "font-weight", "font-style", "text-decoration"];
 const RT_FONT_SIZES = { "1": "0.7em", "2": "0.85em", "3": "1em", "4": "1.2em", "5": "1.5em", "6": "2em", "7": "2.5em" };
 
@@ -1071,6 +1095,9 @@ document.addEventListener("focusin", e => {
   const field = e.target.closest && e.target.closest(".rt");
   if (field) {
     rtActiveField = field;
+    // Aufzählungen gibt es nur dort, wo sie sinnvoll sind (nicht z. B. in der Kostentabelle).
+    const listsAllowed = field.hasAttribute("data-lists");
+    rtToolbar.querySelectorAll("[data-lists]").forEach(b => { b.style.display = listsAllowed ? "" : "none"; });
     rtToolbar.classList.add("show");
     rtLiftUndoBar();
   } else if (!e.target.closest || !e.target.closest("#rtToolbar")) {
@@ -1113,9 +1140,21 @@ document.addEventListener("paste", e => {
   document.execCommand("insertHTML", false, html ? rtSanitize(html) : esc(text));
 });
 // In einzeiligen Feldern schickt Enter das Formular ab (wie bei einem normalen Eingabefeld).
+function rtInsideListItem() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !rtActiveField) return false;
+  let node = sel.getRangeAt(0).startContainer;
+  while (node && node !== rtActiveField) {
+    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "LI") return true;
+    node = node.parentNode;
+  }
+  return false;
+}
 document.addEventListener("keydown", e => {
   const field = e.target.closest && e.target.closest(".rt");
   if (!field || field.classList.contains("multiline") || e.key !== "Enter" || e.shiftKey) return;
+  // In einer Aufzählung soll Enter den nächsten Punkt anlegen, nicht das Formular abschicken.
+  if (rtInsideListItem()) return;
   e.preventDefault();
   const form = field.closest("form");
   if (form) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true }));
@@ -1930,7 +1969,7 @@ function renderProjects() {
         <ul class="plain">${done.map(itemRow).join("")}</ul>
       </details>` : ""}
       <form class="row" data-pform="${p.id}" style="margin-top:8px; margin-bottom:0;">
-        <div class="rt" contenteditable="true" data-pitem-input data-placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;">${editingItem ? rich(editingItem.text) : ""}</div>
+        <div class="rt" contenteditable="true" data-lists data-pitem-input data-placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;">${editingItem ? rich(editingItem.text) : ""}</div>
         <button class="primary" type="submit">${editingItem ? "Speichern" : "+"}</button>
         ${editingItem ? `<button class="ghost" type="button" data-cancel-pitem>Abbrechen</button>` : ""}
       </form>

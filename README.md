@@ -24,6 +24,13 @@ Formatierungsleiste. Beträge, Datumsangaben, Kategorien sowie eure Namen und
 der API-Schlüssel bleiben bewusst reine Eingabefelder – dort würde
 Formatierung die Berechnungen bzw. die Technik stören.
 
+**Aufzählungen:** In den Feldern von **Meetings, To-dos, Wunschlisten und
+Projekten** gibt es zusätzlich „• Liste“ und „1. Liste“ für Aufzählungen mit
+Punkten bzw. Nummern. Die Eingabetaste legt darin den nächsten Punkt an
+(außerhalb einer Aufzählung schickt sie das Formular wie gewohnt ab). In den
+Kosten-Feldern sind Aufzählungen bewusst nicht vorgesehen, weil die Texte dort
+in einer Tabelle stehen.
+
 **Links:** Ein Klick auf 🔗 fragt zuerst nach dem Wort, das angezeigt werden
 soll (z. B. „Rezept“), und danach nach der Adresse. Steht der Cursor in einem
 bestehenden Link, lassen sich Wort und Ziel darüber nachträglich ändern. Die
