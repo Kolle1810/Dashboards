@@ -1110,7 +1110,10 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
 });
 
 // Trägt alle hinterlegten Fixkosten, die für den jeweiligen Monat noch fehlen, automatisch als Ausgabe ein.
+// Nur für den tatsächlich laufenden Monat: Sonst würden beim Zurückblättern in vergangene
+// Monate dort nachträglich Fixkosten entstehen, die es damals nie gab.
 function materializeFixedCosts(ym) {
+  if (ym !== todayStr().slice(0, 7)) return;
   let added = false;
   state.fixedCosts.forEach(fc => {
     if (fc.skipMonths && fc.skipMonths.includes(ym)) return; // Nutzer hat den Eintrag für diesen Monat bewusst gelöscht
@@ -1675,6 +1678,18 @@ function backupLabel(name) {
   if (!m) return name;
   return `${m[3]}.${m[2]}.${m[1]}, ${m[4]}:${m[5]}:${m[6]}`;
 }
+// Listet die Monate auf, aus denen Ausgaben stammen - so ist erkennbar, ob eine Sicherung
+// auch die Vormonate enthält, z. B. "06/2026: 8 · 07/2026: 11 · 08/2026: 3".
+function expenseMonthsText(s) {
+  const m = s && s.expenseMonths;
+  if (!m) return "";
+  const keys = Object.keys(m).sort();
+  if (!keys.length) return "";
+  return keys.map(k => {
+    const [y, mo] = k.split("-");
+    return `${mo}/${y}: ${m[k]}`;
+  }).join(" · ");
+}
 function summaryText(s) {
   if (!s || !s.readable) return "Inhalt nicht lesbar";
   const parts = [];
@@ -1708,19 +1723,25 @@ async function loadBackupList() {
     const data = await res.json();
     const list = (data && data.backups) || [];
     const current = data && data.current;
+    const currentMonths = current ? expenseMonthsText(current) : "";
     const currentLine = current
-      ? `<p class="hint" style="margin:0 0 10px;">Aktuell auf dem NAS: <b>${esc(summaryText(current))}</b></p>`
+      ? `<p class="hint" style="margin:0 0 10px;">Aktuell auf dem NAS: <b>${esc(summaryText(current))}</b>${
+          currentMonths ? `<br>Ausgaben nach Monat: ${esc(currentMonths)}` : ""}</p>`
       : "";
     if (!list.length) {
       el.innerHTML = currentLine + `<div class="empty">Noch keine Sicherungen vorhanden.</div>`;
       return;
     }
-    el.innerHTML = currentLine + `<ul class="plain">` + list.map(b => `
+    el.innerHTML = currentLine + `<ul class="plain">` + list.map(b => {
+      const months = expenseMonthsText(b.summary);
+      return `
       <li>
         <span class="grow"><b>${esc(backupLabel(b.name))}</b><br>
-          <span style="color:var(--text-muted); font-size:12px;">${esc(summaryText(b.summary))}</span></span>
+          <span style="color:var(--text-muted); font-size:12px;">${esc(summaryText(b.summary))}</span>${
+            months ? `<br><span style="color:var(--text-muted); font-size:12px;">Ausgaben nach Monat: ${esc(months)}</span>` : ""}</span>
         <button class="ghost" data-restore="${esc(b.name)}">Wiederherstellen</button>
-      </li>`).join("") + `</ul>
+      </li>`;
+    }).join("") + `</ul>
       <p class="hint" style="margin-top:10px;">Die Uhrzeiten stammen vom NAS und können von der Uhrzeit eures Handys abweichen. Neueste zuerst.</p>`;
   } catch {
     el.innerHTML = `<div class="empty">NAS gerade nicht erreichbar.</div>`;

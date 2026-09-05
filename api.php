@@ -91,9 +91,25 @@ function summarize($json) {
     }
     $countOf = function ($v) { return is_array($v) ? count($v) : 0; };
     $gifts = isset($d['gifts']) && is_array($d['gifts']) ? $d['gifts'] : array();
+
+    // Aus welchen Monaten stammen die Ausgaben? Damit ist auf einen Blick erkennbar,
+    // ob eine Sicherung auch die Vormonate enthält - und nicht nur den laufenden Monat.
+    $months = array();
+    if (isset($d['expenses']) && is_array($d['expenses'])) {
+        foreach ($d['expenses'] as $e) {
+            if (is_array($e) && isset($e['date']) && is_string($e['date']) && strlen($e['date']) >= 7) {
+                $m = substr($e['date'], 0, 7);
+                if (!isset($months[$m])) { $months[$m] = 0; }
+                $months[$m]++;
+            }
+        }
+        ksort($months);
+    }
+
     return array(
-        'readable'   => true,
-        'expenses'   => $countOf(isset($d['expenses']) ? $d['expenses'] : null),
+        'readable'      => true,
+        'expenseMonths' => $months, // z. B. {"2026-06": 8, "2026-07": 11}
+        'expenses'      => $countOf(isset($d['expenses']) ? $d['expenses'] : null),
         'todos'      => $countOf(isset($d['todos']) ? $d['todos'] : null),
         'protocols'  => $countOf(isset($d['protocols']) ? $d['protocols'] : null),
         'topics'     => $countOf(isset($d['topics']) ? $d['topics'] : null),
