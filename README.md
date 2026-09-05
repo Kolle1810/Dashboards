@@ -72,5 +72,8 @@ Alternativ von Hand über **File Station**: die passende Datei aus `backups/`
 in den Web-Ordner kopieren und in `data.json` umbenennen (die bestehende
 `data.json` vorher umbenennen statt löschen).
 
-> Hinweis: Die Uhrzeit im Dateinamen stammt vom NAS und kann von der in
-> File Station angezeigten Uhrzeit abweichen (unterschiedliche Zeitzonen).
+> Hinweis zu den Uhrzeiten: Im Dashboard werden die Sicherungen immer in der
+> Ortszeit des jeweiligen Geräts angezeigt. Der Zeitstempel im **Dateinamen**
+> ist dagegen UTC (Weltzeit) – in Deutschland also 1 Stunde (Winter) bzw.
+> 2 Stunden (Sommer) früher als die Ortszeit. Das ist bewusst so, weil die in
+> PHP eingestellte Zeitzone auf NAS-Geräten oft nicht der Ortszeit entspricht.

@@ -1688,11 +1688,27 @@ document.getElementById("apiKeyForm").addEventListener("submit", e => {
 });
 
 /* ---------- Sicherungen auf dem NAS ansehen & wiederherstellen ---------- */
-// Wandelt "data_2026-08-16_211506_123456.json" in "16.08.2026, 21:15:06" um.
-function backupLabel(name) {
+// Zeigt den Zeitpunkt einer Sicherung in der Ortszeit des jeweiligen Geräts an.
+// Grundlage ist der Änderungszeitpunkt der Datei (Unix-Zeit, also ohne Zeitzone) - der
+// Dateiname taugt dafür nicht, weil die in PHP eingestellte Zeitzone auf NAS-Geräten oft
+// von der tatsächlichen Ortszeit abweicht.
+function backupLabel(b) {
+  const name = typeof b === "string" ? b : (b && b.name) || "";
+  const mtime = typeof b === "object" && b ? b.mtime : null;
+  if (mtime) {
+    return new Date(mtime * 1000).toLocaleString("de-DE", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
+  // Notfalls aus dem Dateinamen ableiten (dieser ist seit der Umstellung UTC).
   const m = /^data_(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})_/.exec(name);
   if (!m) return name;
-  return `${m[3]}.${m[2]}.${m[1]}, ${m[4]}:${m[5]}:${m[6]}`;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
+  return d.toLocaleString("de-DE", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  });
 }
 // Listet die Monate auf, aus denen Ausgaben stammen - so ist erkennbar, ob eine Sicherung
 // auch die Vormonate enthält, z. B. "06/2026: 8 · 07/2026: 11 · 08/2026: 3".
@@ -1752,13 +1768,13 @@ async function loadBackupList() {
       const months = expenseMonthsText(b.summary);
       return `
       <li>
-        <span class="grow"><b>${esc(backupLabel(b.name))}</b><br>
+        <span class="grow"><b>${esc(backupLabel(b))}</b><br>
           <span style="color:var(--text-muted); font-size:12px;">${esc(summaryText(b.summary))}</span>${
             months ? `<br><span style="color:var(--text-muted); font-size:12px;">Ausgaben nach Monat: ${esc(months)}</span>` : ""}</span>
-        <button class="ghost" data-restore="${esc(b.name)}">Wiederherstellen</button>
+        <button class="ghost" data-restore="${esc(b.name)}" data-label="${esc(backupLabel(b))}">Wiederherstellen</button>
       </li>`;
     }).join("") + `</ul>
-      <p class="hint" style="margin-top:10px;">Die Uhrzeiten stammen vom NAS und können von der Uhrzeit eures Handys abweichen. Neueste zuerst.</p>`;
+      <p class="hint" style="margin-top:10px;">Zeiten in eurer Ortszeit, neueste zuerst.</p>`;
   } catch {
     el.innerHTML = `<div class="empty">NAS gerade nicht erreichbar.</div>`;
   }
@@ -1768,7 +1784,8 @@ document.getElementById("backupList").addEventListener("click", async e => {
   const btn = e.target.closest("[data-restore]");
   if (!btn) return;
   const name = btn.dataset.restore;
-  if (!confirm("Diesen Stand wiederherstellen?\n\n" + backupLabel(name) + "\n\nDer aktuelle Stand wird vorher automatisch gesichert und geht nicht verloren.")) return;
+  const label = btn.dataset.label || backupLabel(name);
+  if (!confirm("Diesen Stand wiederherstellen?\n\n" + label + "\n\nDer aktuelle Stand wird vorher automatisch gesichert und geht nicht verloren.")) return;
   try {
     const key = encodeURIComponent(state.settings.apiKey);
     const res = await apiFetch("api.php?action=restore&file=" + encodeURIComponent(name) + "&key=" + key, {
@@ -1783,7 +1800,7 @@ document.getElementById("backupList").addEventListener("click", async e => {
     await syncFromServer();
     renderAll();
     await loadBackupList();
-    alert("Fertig! Der Stand vom " + backupLabel(name) + " ist wieder da.\n\nBitte öffnet das Dashboard auf euren anderen Geräten einmal neu.");
+    alert("Fertig! Der Stand vom " + label + " ist wieder da.\n\nBitte öffnet das Dashboard auf euren anderen Geräten einmal neu.");
   } catch {
     alert("NAS gerade nicht erreichbar.");
   }

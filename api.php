@@ -42,20 +42,29 @@ function backupBeforeOverwrite($dataFile, $backupDir, $keep) {
     if (!is_dir($backupDir)) {
         return; // Ordner konnte nicht angelegt werden (z. B. fehlende Schreibrechte) - Backup einfach auslassen
     }
+    // Bewusst gmdate() statt date(): Die in PHP eingestellte Zeitzone weicht auf NAS-Geräten
+    // oft von der tatsächlichen Ortszeit ab (QNAP ist z. B. häufig auf eine asiatische Zeitzone
+    // voreingestellt). Der Dateiname ist damit immer UTC und eindeutig; die Anzeige im
+    // Dashboard rechnet ohnehin über den Zeitstempel der Datei in eure Ortszeit um.
     // Mikrosekunden-Suffix, damit mehrere Sicherungen innerhalb derselben Sekunde
-    // (z. B. durch mehrere schnell aufeinanderfolgende Änderungen) sich nicht gegenseitig
-    // überschreiben, aber der Dateiname trotzdem chronologisch sortierbar bleibt.
-    $stamp = date('Y-m-d_His') . '_' . sprintf('%06d', (int) (microtime(true) * 1000000) % 1000000);
+    // sich nicht gegenseitig überschreiben, der Name aber sortierbar bleibt.
+    $stamp = gmdate('Y-m-d_His') . '_' . sprintf('%06d', (int) (microtime(true) * 1000000) % 1000000);
     @copy($dataFile, $backupDir . '/data_' . $stamp . '.json');
 
     $files = glob($backupDir . '/data_*.json');
     if ($files === false) {
         return;
     }
-    sort($files);
-    $excess = count($files) - $keep;
+    // Nach tatsächlichem Änderungsdatum sortieren statt nach Dateinamen: So wird auch dann
+    // die wirklich älteste Sicherung entfernt, wenn ältere Namen noch in einer anderen
+    // Zeitzone erzeugt wurden.
+    $byTime = array();
+    foreach ($files as $f) { $byTime[$f] = filemtime($f); }
+    asort($byTime);
+    $ordered = array_keys($byTime);
+    $excess = count($ordered) - $keep;
     for ($i = 0; $i < $excess; $i++) {
-        @unlink($files[$i]);
+        @unlink($ordered[$i]);
     }
 }
 
@@ -125,14 +134,22 @@ if ($method === 'GET' && $action === 'backups') {
     $out = array();
     $files = is_dir($BACKUP_DIR) ? glob($BACKUP_DIR . '/data_*.json') : array();
     if ($files === false) { $files = array(); }
-    rsort($files); // neueste zuerst
-    foreach ($files as $f) {
+    // Nach echtem Änderungsdatum sortieren (neueste zuerst) - unabhängig davon, in welcher
+    // Zeitzone der Dateiname erzeugt wurde.
+    $byTime = array();
+    foreach ($files as $f) { $byTime[$f] = filemtime($f); }
+    arsort($byTime);
+    foreach (array_keys($byTime) as $f) {
         $name = basename($f);
         if (safeBackupName($name) === null) { continue; }
         $content = file_get_contents($f);
         $out[] = array(
             'name'    => $name,
             'size'    => filesize($f),
+            // Unix-Zeitstempel: eindeutig, ohne Zeitzone. Das Dashboard rechnet daraus die
+            // Ortszeit des jeweiligen Geräts - so stimmt die Anzeige unabhängig davon,
+            // was auf dem NAS eingestellt ist.
+            'mtime'   => filemtime($f),
             'summary' => summarize($content !== false ? $content : '')
         );
     }
