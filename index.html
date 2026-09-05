@@ -174,6 +174,14 @@
   button.icon:hover { color: var(--critical); background: var(--page); }
   #manualSyncBtn { color: var(--base-ink); font-size: 19px; opacity: 0.8; }
   #manualSyncBtn:hover { opacity: 1; background: rgba(255,255,255,0.35); }
+  /* Sichtbare Rückmeldung direkt am Knopf: dreht während der Abfrage, danach kurz ✓ oder ✕ */
+  @keyframes rtSpin { to { transform: rotate(360deg); } }
+  #manualSyncBtn.busy { animation: rtSpin 0.9s linear infinite; opacity: 1; }
+  #manualSyncBtn.sync-ok::after, #manualSyncBtn.sync-fail::after {
+    position: absolute; margin-left: -8px; margin-top: -10px; font-size: 12px;
+  }
+  #manualSyncBtn.sync-ok::after { content: "✅"; }
+  #manualSyncBtn.sync-fail::after { content: "⚠️"; }
 
   ul.plain { list-style: none; margin: 0; padding: 0; }
   ul.plain li {
@@ -755,32 +763,31 @@ const offlineNow = () => navigator.onLine === false;
 async function syncFromServer() {
   // Ohne Schlüssel läuft das Dashboard rein lokal - dann gibt es keinen Server-Stand,
   // auf den gewartet werden müsste.
-  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); markInitialSyncDone(); return; }
+  if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); markInitialSyncDone(); return false; }
   // Noch nicht hochgeladene eigene Änderungen haben Vorrang: Erst hochladen, sonst würde
   // der ältere Server-Stand sie gleich wieder überschreiben (= stiller Datenverlust).
-  if (pendingUpload) { await uploadNow(); return; }
+  if (pendingUpload) { return await uploadNow(); }
   try {
     const key = encodeURIComponent(state.settings.apiKey);
     const res = await apiFetch("api.php?action=load&key=" + key, {
       cache: "no-store",
       headers: { "X-Api-Key": state.settings.apiKey }
     });
-    if (!res.ok) { setSyncStatus(await syncErrorKind(res)); return; }
+    if (!res.ok) { setSyncStatus(await syncErrorKind(res)); return false; }
     const serverState = await res.json();
     if (!serverState || typeof serverState !== "object" || !Object.keys(serverState).length) {
       // Auf dem NAS liegt noch nichts - dann den lokalen Stand einmalig hochladen, damit
       // er nicht nur auf diesem Gerät existiert. Hier kann nichts überschrieben werden.
       markInitialSyncDone();
-      await uploadNow();
-      return;
+      return await uploadNow();
     }
     // Während die Antwort unterwegs war, kann etwas eingetragen worden sein - dann gilt
     // wieder: eigene Änderungen zuerst, niemals überschreiben.
-    if (pendingUpload) { await uploadNow(); return; }
+    if (pendingUpload) { return await uploadNow(); }
     if (JSON.stringify(serverState) === JSON.stringify(state)) {
       setSyncStatus("ok");
       markInitialSyncDone();
-      return;
+      return true;
     }
     const workingKey = state.settings.apiKey;
     state = mergeWithDefaults(serverState);
@@ -793,12 +800,17 @@ async function syncFromServer() {
     setSyncStatus("ok");
     initialSyncDone = true; // ab jetzt dürfen Fixkosten regulär angelegt werden
     renderAll();
+    return true;
   } catch {
     setSyncStatus(offlineNow() ? "offline" : "error");
+    return false;
   }
 }
 function setSyncStatus(kind) {
   const el = document.getElementById("syncStatus");
+  const btn = document.getElementById("manualSyncBtn");
+  // Klappt es (auch automatisch) wieder, verschwindet die Warnung am Knopf von selbst.
+  if (btn && kind === "ok") btn.classList.remove("sync-fail");
   if (!el) return;
   if (kind === "ok") {
     el.textContent = "🔗 Synchronisiert · " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -813,6 +825,9 @@ function setSyncStatus(kind) {
     el.style.color = "var(--critical)";
   } else if (kind === "wrongkey") {
     el.textContent = "⚠️ API-Schlüssel stimmt nicht mit dem auf dem NAS überein";
+    el.style.color = "var(--critical)";
+  } else if (kind === "readonly") {
+    el.textContent = "⚠️ Das NAS kann nicht speichern – der Ordner ist für den Webserver schreibgeschützt";
     el.style.color = "var(--critical)";
   } else if (kind === "offline") {
     el.textContent = "📴 Offline – eure Änderungen sind gespeichert und werden automatisch übertragen, sobald wieder Verbindung besteht";
@@ -832,13 +847,50 @@ async function syncErrorKind(res) {
   try {
     const body = await res.clone().json();
     if (body && body.error === "server_not_configured") return "notconfigured";
+    if (body && body.error === "write_failed") return "readonly";
   } catch { /* keine JSON-Antwort - generischer Fehler */ }
   return "error";
 }
-document.getElementById("manualSyncBtn").addEventListener("click", () => {
+// Der Knopf oben in der Kopfzeile ist weit von der Statusanzeige am Seitenende entfernt.
+// Deshalb meldet er das Ergebnis direkt an sich selbst zurück (Drehen, dann ✓ oder ✕) -
+// sonst sieht es so aus, als würde er nichts tun.
+async function manualSync() {
+  const btn = document.getElementById("manualSyncBtn");
+  if (btn.classList.contains("busy")) return; // läuft bereits
+  // Einen noch wartenden (verzögerten) Upload sofort ausführen und die Wartezeit des
+  // automatischen Wiederholens zurücksetzen - sonst würde der Knopf im Fehlerfall auf
+  // einen Versuch warten, der erst bis zu einer Minute später ansteht.
+  clearTimeout(syncTimer);
+  clearRetry();
+
+  if (!state.settings.apiKey.trim()) {
+    setSyncStatus("unset");
+    alert("Es ist noch kein API-Schlüssel eingetragen – ohne ihn kann sich das Dashboard nicht mit dem NAS verbinden.\n\nZu finden unter: ⚙️ Einstellungen → Geräteübergreifende Synchronisierung");
+    return;
+  }
+
+  btn.classList.remove("sync-ok", "sync-fail");
+  btn.classList.add("busy");
   setSyncStatus("loading");
-  syncFromServer();
-});
+  let ok = false;
+  try {
+    ok = await syncFromServer();
+  } finally {
+    btn.classList.remove("busy");
+  }
+  // Erfolg kurz bestätigen; ein Problem bleibt am Knopf sichtbar, bis es behoben ist.
+  btn.classList.add(ok ? "sync-ok" : "sync-fail");
+  if (ok) setTimeout(() => btn.classList.remove("sync-ok"), 2500);
+
+  // Bei anhaltenden Problemen konkret weiterhelfen, statt es nur unten klein anzuzeigen.
+  if (!ok) {
+    const el = document.getElementById("syncStatus");
+    const grund = el ? el.textContent.replace(/^[^A-Za-zÄÖÜäöü]+/, "") : "";
+    alert("Die Verbindung zum NAS hat nicht geklappt.\n\n" + (grund || "Das NAS war nicht erreichbar.") +
+      "\n\nHäufigste Ursachen:\n• Ihr seid unterwegs und nicht im Heimnetz bzw. VPN\n• Das NAS ist aus oder im Ruhezustand\n\nEure Eingaben sind gespeichert und werden automatisch übertragen, sobald es wieder klappt.");
+  }
+}
+document.getElementById("manualSyncBtn").addEventListener("click", manualSync);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 /* ---------- Rückgängig (Undo) ---------- */
