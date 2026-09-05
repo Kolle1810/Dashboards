@@ -73,6 +73,26 @@ zusätzlich automatisch mit `api.php` auf dem NAS abgeglichen:
 
 Ganz unten im Dashboard zeigt ein kleiner Hinweis den Synchronisierungsstatus an.
 
+## Verbindungsprobleme eingrenzen
+
+Unter **⚙️ Einstellungen → „🔎 Verbindung testen“** führt das Dashboard drei
+Versuche durch und leitet daraus die wahrscheinliche Ursache ab – z. B.
+„nicht im Heimnetz“, „NAS-Festplatten wachen erst auf“, „API-Schlüssel passt
+nicht“ oder „instabile Verbindung“. Am aussagekräftigsten ist der Test in dem
+Moment, in dem die Warnung tatsächlich erscheint.
+
+Häufige Ursachen für „mal geht's, mal nicht“ auf dem Handy:
+
+- **iPhone „WLAN-Assist“** (Einstellungen → Mobilfunk): Bei schwachem WLAN
+  wechselt das iPhone unbemerkt auf mobile Daten – ein NAS im Heimnetz ist
+  dann nicht mehr erreichbar. Das ist die häufigste Ursache für sporadische
+  Ausfälle trotz angezeigtem WLAN-Symbol.
+- **Festplatten im Ruhezustand**: Die erste Anfrage dauert dann mehrere
+  Sekunden, bis das NAS aufgewacht ist (QNAP: Systemsteuerung → Hardware →
+  Energiesparmodus).
+- **Unterwegs ohne VPN**: Eine lokale Adresse (`192.168.…`) ist von außen
+  grundsätzlich nicht erreichbar.
+
 ## Backup
 
 Unter ⚙️ Einstellungen → „Daten sichern & teilen“ könnt ihr jederzeit

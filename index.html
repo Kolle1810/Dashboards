@@ -563,6 +563,13 @@
     </div>
 
     <div class="card">
+      <h2>🔎 Verbindung testen</h2>
+      <p class="hint">Klappt die Verbindung zum NAS mal und mal nicht? Dieser Test führt mehrere Versuche durch und sagt euch, woran es liegt.</p>
+      <button class="ghost" id="diagBtn">Verbindung jetzt testen</button>
+      <div id="diagResult" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
       <h2>🛟 Sicherungen auf dem NAS</h2>
       <p class="hint">Vor jeder Änderung legt das NAS automatisch eine Sicherung an. Falls versehentlich etwas gelöscht wurde oder Daten fehlen, könnt ihr hier einen früheren Stand zurückholen – der aktuelle Stand wird dabei vorher ebenfalls gesichert.</p>
       <button class="ghost" id="loadBackupsBtn">🔄 Sicherungen anzeigen</button>
@@ -675,7 +682,8 @@ function saveLocalOnly() {
 // automatische Anlegen der Fixkosten beim Start). Der neue Name sorgt dafür, dass solche
 // falschen Markierungen von Geräten ignoriert statt weitergeschleppt werden.
 const PENDING_KEY = STORE_KEY + ".pending2";
-const SYNC_TIMEOUT_MS = 8000;
+const SYNC_TIMEOUT_MS = 8000;        // Hintergrund-Abgleich: schnell aufgeben, es wird ohnehin wiederholt
+const SYNC_TIMEOUT_MANUAL_MS = 25000; // Wenn jemand aktiv wartet: NAS-Festplatten dürfen erst aufwachen
 let syncTimer = null;
 let retryTimer = null;
 let retryDelay = 0;
@@ -708,9 +716,9 @@ function markInitialSyncDone() {
 
 // fetch mit Zeitlimit: Ohne das bleiben Anfragen auf dem Handy bei schlechtem oder
 // halb verbundenem WLAN teils endlos hängen, statt zu scheitern und es erneut zu versuchen.
-async function apiFetch(url, options) {
+async function apiFetch(url, options, timeoutMs) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), SYNC_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || SYNC_TIMEOUT_MS);
   try {
     return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
   } finally {
@@ -733,7 +741,7 @@ function syncToServer() {
   clearTimeout(syncTimer);
   syncTimer = setTimeout(uploadNow, 400);
 }
-async function uploadNow() {
+async function uploadNow(timeoutMs) {
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); return false; }
   try {
     const key = encodeURIComponent(state.settings.apiKey);
@@ -741,7 +749,7 @@ async function uploadNow() {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Api-Key": state.settings.apiKey },
       body: JSON.stringify(state)
-    });
+    }, timeoutMs);
     if (res.ok) {
       setPendingUpload(false);
       clearRetry();
@@ -760,19 +768,19 @@ async function uploadNow() {
 }
 const offlineNow = () => navigator.onLine === false;
 
-async function syncFromServer() {
+async function syncFromServer(timeoutMs) {
   // Ohne Schlüssel läuft das Dashboard rein lokal - dann gibt es keinen Server-Stand,
   // auf den gewartet werden müsste.
   if (!state.settings.apiKey.trim()) { setSyncStatus("unset"); markInitialSyncDone(); return false; }
   // Noch nicht hochgeladene eigene Änderungen haben Vorrang: Erst hochladen, sonst würde
   // der ältere Server-Stand sie gleich wieder überschreiben (= stiller Datenverlust).
-  if (pendingUpload) { return await uploadNow(); }
+  if (pendingUpload) { return await uploadNow(timeoutMs); }
   try {
     const key = encodeURIComponent(state.settings.apiKey);
     const res = await apiFetch("api.php?action=load&key=" + key, {
       cache: "no-store",
       headers: { "X-Api-Key": state.settings.apiKey }
-    });
+    }, timeoutMs);
     if (!res.ok) { setSyncStatus(await syncErrorKind(res)); return false; }
     const serverState = await res.json();
     if (!serverState || typeof serverState !== "object" || !Object.keys(serverState).length) {
@@ -874,7 +882,7 @@ async function manualSync() {
   setSyncStatus("loading");
   let ok = false;
   try {
-    ok = await syncFromServer();
+    ok = await syncFromServer(SYNC_TIMEOUT_MANUAL_MS);
   } finally {
     btn.classList.remove("busy");
   }
@@ -2211,6 +2219,92 @@ async function loadBackupList() {
     el.innerHTML = `<div class="empty">NAS gerade nicht erreichbar.</div>`;
   }
 }
+/* ---------- Verbindungstest ---------- */
+// Führt mehrere Versuche durch und leitet daraus eine Ursache ab. Das Muster der Versuche
+// ist dabei aussagekräftiger als ein einzelner Fehlschlag: Sofortige Fehler deuten auf ein
+// anderes Netz hin, Zeitüberschreitungen auf ein schlafendes oder blockiertes NAS, und ein
+// langsamer erster Versuch gefolgt von schnellen auf aufwachende Festplatten.
+async function runDiagnostics() {
+  const el = document.getElementById("diagResult");
+  const zeile = (text, farbe) => `<div style="font-size:13px; margin:3px 0; color:${farbe || "var(--text-secondary)"}">${text}</div>`;
+
+  if (!state.settings.apiKey.trim()) {
+    el.innerHTML = zeile("⚠️ Es ist noch kein API-Schlüssel eingetragen (siehe oben).", "var(--critical)");
+    return;
+  }
+
+  el.innerHTML = zeile("⏳ Test läuft – bitte einen Moment …");
+  const versuche = [];
+  for (let i = 0; i < 3; i++) {
+    const start = Date.now();
+    try {
+      const key = encodeURIComponent(state.settings.apiKey);
+      const res = await apiFetch("api.php?action=load&key=" + key, {
+        cache: "no-store",
+        headers: { "X-Api-Key": state.settings.apiKey }
+      }, SYNC_TIMEOUT_MANUAL_MS);
+      versuche.push({ ms: Date.now() - start, status: res.status, ok: res.ok });
+    } catch (err) {
+      const ms = Date.now() - start;
+      // Ein Abbruch durch das Zeitlimit sieht anders aus als ein sofortiger Netzwerkfehler.
+      versuche.push({ ms, timeout: ms >= SYNC_TIMEOUT_MANUAL_MS - 500, fehler: true });
+    }
+    if (i < 2) await new Promise(r => setTimeout(r, 400));
+  }
+
+  const erfolge = versuche.filter(v => v.ok).length;
+  const timeouts = versuche.filter(v => v.timeout).length;
+  const netzfehler = versuche.filter(v => v.fehler && !v.timeout).length;
+  const httpFehler = versuche.filter(v => v.status && !v.ok);
+
+  let out = "";
+  out += zeile("<b>Adresse:</b> " + esc(location.protocol + "//" + location.host));
+  out += zeile("<b>Gerät online:</b> " + (navigator.onLine ? "ja" : "nein – keine Netzwerkverbindung"),
+               navigator.onLine ? "" : "var(--critical)");
+  out += zeile("<b>Versuche:</b> " + versuche.map(v =>
+    v.ok ? `✅ ${v.ms} ms` : v.timeout ? `⏱️ Zeitüberschreitung (${Math.round(v.ms / 1000)} s)` :
+    v.status ? `⚠️ Fehler ${v.status}` : `❌ keine Verbindung (${v.ms} ms)`).join(" · "));
+
+  let urteil, farbe = "var(--critical)";
+  if (erfolge === 3) {
+    const langsam = versuche[0].ms > 3000 && versuche[2].ms < 1500;
+    if (langsam) {
+      urteil = "Verbindung steht – aber der erste Versuch war deutlich langsamer als die folgenden. " +
+        "Typisch für Festplatten im Ruhezustand: Das NAS muss erst aufwachen. Wenn es euch stört, könnt ihr " +
+        "im QNAP unter Systemsteuerung → Hardware → Energiesparmodus den Ruhezustand der Festplatten abschalten.";
+      farbe = "var(--text-secondary)";
+    } else {
+      urteil = "Verbindung steht und ist schnell. Wenn es sonst zeitweise klemmt, tritt das Problem gerade nicht auf – " +
+        "macht den Test am besten noch einmal in dem Moment, in dem die Warnung erscheint.";
+      farbe = "var(--good)";
+    }
+  } else if (httpFehler.length === 3) {
+    urteil = "Das NAS antwortet, weist die Anfrage aber ab (Fehler " + httpFehler[0].status + "). " +
+      "Das ist kein Netzwerkproblem – meist stimmt der API-Schlüssel in api.php nicht mit dem hier eingetragenen überein.";
+  } else if (timeouts === 3) {
+    urteil = "Alle Versuche liefen in die Zeitüberschreitung: Das NAS antwortet gar nicht. " +
+      "Typisch, wenn das Handy nicht im Heimnetz ist (z. B. mobile Daten statt WLAN, oder VPN aus) " +
+      "oder das NAS gerade aus bzw. im Ruhezustand ist.";
+  } else if (netzfehler === 3) {
+    urteil = "Die Verbindung wurde sofort abgewiesen. Das Handy ist zwar in einem Netz, erreicht das NAS dort aber nicht – " +
+      "meist, weil es in einem anderen Netz hängt (mobile Daten, Gast-WLAN) oder die Adresse nicht mehr stimmt.";
+  } else {
+    urteil = "Wechselndes Ergebnis – mal klappt es, mal nicht. Das deutet auf eine instabile Verbindung hin: " +
+      "schwaches WLAN, ein Wechsel zwischen WLAN und mobilen Daten, oder ein NAS, das gerade aufwacht.";
+  }
+  out += zeile("<br><b>Ergebnis:</b> " + urteil, farbe);
+
+  // Auf dem iPhone ist ein häufiger Grund, dass iOS bei schwachem WLAN unbemerkt auf mobile
+  // Daten umschaltet - dann ist ein NAS im Heimnetz nicht mehr erreichbar.
+  if (erfolge < 3 && /iPhone|iPad/.test(navigator.userAgent)) {
+    out += zeile("<br><b>Tipp fürs iPhone:</b> Prüft unter Einstellungen → Mobilfunk, ob <b>„WLAN-Assist“</b> aktiv ist. " +
+      "Damit wechselt das iPhone bei schwachem WLAN unbemerkt auf mobile Daten – euer NAS im Heimnetz ist dann nicht mehr erreichbar. " +
+      "Abschalten behebt genau dieses „mal geht’s, mal nicht“.");
+  }
+  el.innerHTML = out;
+}
+document.getElementById("diagBtn").addEventListener("click", runDiagnostics);
+
 document.getElementById("loadBackupsBtn").addEventListener("click", loadBackupList);
 document.getElementById("backupList").addEventListener("click", async e => {
   const btn = e.target.closest("[data-restore]");
