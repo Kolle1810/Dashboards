@@ -14,6 +14,20 @@ Alle Geräte greifen auf dieselben, zentral auf dem NAS gespeicherten Daten zu.
 | **Wunschlisten** | Eure eigene Wunschliste + eine dritte Liste für Geschenkideen für andere |
 | **Projekte** | Größere Vorhaben (Urlaub, Haus …) mit Checklisten, Fortschrittsbalken und Archiv für erledigte Schritte |
 
+## Texte formatieren
+
+In allen Textfeldern für Inhalte (Themen, Protokolle, Beschreibungen von
+Ausgaben und Fixkosten, To-dos, Wunschlisten, Projekte) lassen sich
+**Schriftart, Schriftgröße und Schriftfarbe** ändern sowie **Links**
+hinterlegen. Sobald ihr in ein solches Feld tippt, erscheint unten eine
+Formatierungsleiste. Beträge, Datumsangaben, Kategorien sowie eure Namen und
+der API-Schlüssel bleiben bewusst reine Eingabefelder – dort würde
+Formatierung die Berechnungen bzw. die Technik stören.
+
+Eingefügte Inhalte werden dabei automatisch bereinigt: Erlaubt sind nur
+Textauszeichnungen und Links auf `https://`, `mailto:` oder `tel:` – alles
+andere (z. B. Skripte aus einer kopierten Webseite) wird zu reinem Text.
+
 ## Aufbau
 
 - `index.html` – das komplette Dashboard (Oberfläche + Logik)

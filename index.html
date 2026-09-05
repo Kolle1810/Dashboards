@@ -106,6 +106,35 @@
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
   textarea { width: 100%; resize: vertical; }
+
+  /* Formatierbare Eingabefelder (Schriftart, -größe, -farbe, Links) */
+  .rt {
+    background: var(--page); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; font-family: inherit; line-height: 1.5;
+    min-height: 20px; overflow-wrap: break-word; word-break: break-word;
+  }
+  .rt:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .rt:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+  .rt.multiline { min-height: 76px; width: 100%; }
+  .rt a, .rich a { color: var(--series-a); }
+
+  /* Gemeinsame Formatierungsleiste - erscheint nur, während ein Feld bearbeitet wird */
+  #rtToolbar {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 12px;
+    display: none; flex-wrap: wrap; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); z-index: 30;
+    max-width: calc(100vw - 20px);
+  }
+  #rtToolbar.show { display: flex; }
+  #rtToolbar select { padding: 5px 6px; font-size: 13px; }
+  #rtToolbar button {
+    background: var(--page); border: 1px solid var(--border); border-radius: 7px;
+    padding: 5px 9px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text-primary);
+  }
+  #rtToolbar button:hover { background: var(--accent-soft); border-color: var(--accent); }
+  #rtToolbar input[type="color"] { width: 34px; height: 30px; padding: 2px; cursor: pointer; }
   button.primary {
     background: var(--accent); color: var(--accent-ink); border: none; border-radius: 8px;
     padding: 8px 16px; font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 600;
@@ -267,7 +296,7 @@
       <h2>Themenliste fürs nächste Meeting</h2>
       <p class="hint">Sammelt hier alles, was ihr besprechen wollt. Beim Meeting hakt ihr die Punkte einfach ab.</p>
       <form class="row" id="topicForm">
-        <input type="text" id="topicInput" placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;" required>
+        <div id="topicInput" class="rt" contenteditable="true" data-placeholder="Neues Thema, z. B. „Urlaubsbudget besprechen“" style="flex:1; min-width:220px;"></div>
         <button class="primary" type="submit" id="topicSubmitBtn">Hinzufügen</button>
         <button class="ghost" type="button" id="topicCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -280,9 +309,9 @@
       <form id="protocolForm">
         <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
           <input type="date" id="protocolDate" required>
-          <input type="text" id="protocolTitle" placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;" required>
+          <div id="protocolTitle" class="rt" contenteditable="true" data-placeholder="Titel, z. B. „Wochen-Meeting“" style="flex:1; min-width:200px;"></div>
         </div>
-        <textarea id="protocolNotes" rows="4" placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></textarea>
+        <div id="protocolNotes" class="rt multiline" contenteditable="true" data-placeholder="Was habt ihr besprochen? Was wurde entschieden? Wer macht was?"></div>
         <div style="margin-top:8px; display:flex; gap:8px;">
           <button class="primary" type="submit" id="protocolSubmitBtn">Protokoll speichern</button>
           <button class="ghost" type="button" id="protocolCancelBtn" style="display:none;">Abbrechen</button>
@@ -300,7 +329,7 @@
 
       <form class="row" id="expenseForm">
         <input type="month" id="expDate" required>
-        <input type="text" id="expDesc" placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;" required>
+        <div id="expDesc" class="rt" contenteditable="true" data-placeholder="Beschreibung, z. B. „Wocheneinkauf“" style="flex:1; min-width:180px;"></div>
         <input type="text" id="expAmount" placeholder="Betrag in €" style="width:110px;" required inputmode="decimal">
         <select id="expPayer"></select>
         <select id="expCategory">
@@ -324,7 +353,7 @@
       <p class="hint">Einmal hinterlegt, werden diese Kosten automatisch jeden Monat als Ausgabe eingetragen – bis ihr sie hier wieder entfernt.</p>
 
       <form class="row" id="fixedCostForm">
-        <input type="text" id="fcDesc" placeholder="Beschreibung, z. B. „Miete“" style="flex:1; min-width:180px;" required>
+        <div id="fcDesc" class="rt" contenteditable="true" data-placeholder="Beschreibung, z. B. „Miete“" style="flex:1; min-width:180px;"></div>
         <input type="text" id="fcAmount" placeholder="Betrag in €" style="width:110px;" required inputmode="decimal">
         <select id="fcPayer"></select>
         <select id="fcCategory">
@@ -398,7 +427,7 @@
       <p class="hint">Wer macht was? Einfach eintragen, zuweisen und abhaken.</p>
       <form id="todoForm">
         <div class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-          <input type="text" id="todoInput" placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;" required>
+          <div id="todoInput" class="rt" contenteditable="true" data-placeholder="Neue Aufgabe, z. B. „Waschmaschine ausräumen“" style="flex:1; min-width:220px;"></div>
           <select id="todoWho"></select>
         </div>
         <div class="row" style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:8px;">
@@ -434,7 +463,7 @@
             <span id="giftHeadA">Wunschliste …</span>
           </h3>
           <form class="row" id="giftFormA">
-            <input type="text" id="giftInputA" placeholder="Neue Idee…" style="flex:1;" required>
+            <div id="giftInputA" class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
             <button class="primary" type="submit" id="giftSubmitA">+</button>
             <button class="ghost" type="button" id="giftCancelA" style="display:none;">Abbrechen</button>
           </form>
@@ -445,7 +474,7 @@
             <span id="giftHeadB">Wunschliste …</span>
           </h3>
           <form class="row" id="giftFormB">
-            <input type="text" id="giftInputB" placeholder="Neue Idee…" style="flex:1;" required>
+            <div id="giftInputB" class="rt" contenteditable="true" data-placeholder="Neue Idee…" style="flex:1;"></div>
             <button class="primary" type="submit" id="giftSubmitB">+</button>
             <button class="ghost" type="button" id="giftCancelB" style="display:none;">Abbrechen</button>
           </form>
@@ -458,8 +487,8 @@
       <h2>🎉 Geschenkideen für andere</h2>
       <p class="hint">Für Freunde, Familie, Hochzeiten & Co. – damit ihr nie ohne Idee dasteht.</p>
       <form class="row" id="giftFormOthers">
-        <input type="text" id="giftInputOthersWho" placeholder="Für wen? z. B. „Hochzeit Lisa & Tom“" style="flex:1; min-width:160px;" required>
-        <input type="text" id="giftInputOthersIdea" placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;" required>
+        <div id="giftInputOthersWho" class="rt" contenteditable="true" data-placeholder="Für wen? z. B. „Hochzeit Lisa &amp; Tom“" style="flex:1; min-width:160px;"></div>
+        <div id="giftInputOthersIdea" class="rt" contenteditable="true" data-placeholder="Idee, z. B. „Espressomaschine“" style="flex:1; min-width:180px;"></div>
         <button class="primary" type="submit" id="giftOthersSubmitBtn">+</button>
         <button class="ghost" type="button" id="giftOthersCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -473,8 +502,8 @@
       <h2>Gemeinsame Projekte</h2>
       <p class="hint">Größere Vorhaben wie Urlaub, Umzug oder Haus – jedes Projekt bekommt eine eigene Checkliste mit Fortschrittsanzeige.</p>
       <form class="row" id="projectForm">
-        <input type="text" id="projectName" placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;" required>
-        <input type="text" id="projectNotes" placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;">
+        <div id="projectName" class="rt" contenteditable="true" data-placeholder="Projektname, z. B. „Sommerurlaub 2026“" style="flex:1; min-width:200px;"></div>
+        <div id="projectNotes" class="rt" contenteditable="true" data-placeholder="Kurzbeschreibung (optional)" style="flex:1; min-width:200px;"></div>
         <button class="primary" type="submit" id="projectSubmitBtn">Projekt anlegen</button>
         <button class="ghost" type="button" id="projectCancelBtn" style="display:none;">Abbrechen</button>
       </form>
@@ -526,6 +555,33 @@
 
 </main>
 <div class="footer-note">Bürokratie der Liebe · Eure Daten liegen zentral und privat auf eurem eigenen NAS <span id="syncStatus" style="margin-left:6px;"></span></div>
+
+<div id="rtToolbar" aria-label="Textformatierung">
+  <select id="rtFont" title="Schriftart">
+    <option value="">Schriftart</option>
+    <option value="system-ui, -apple-system, sans-serif">Standard</option>
+    <option value="Georgia, serif">Georgia</option>
+    <option value="&quot;Times New Roman&quot;, serif">Times</option>
+    <option value="&quot;Courier New&quot;, monospace">Courier</option>
+    <option value="&quot;Comic Sans MS&quot;, cursive">Comic Sans</option>
+  </select>
+  <select id="rtSize" title="Schriftgröße">
+    <option value="">Größe</option>
+    <option value="1">Sehr klein</option>
+    <option value="2">Klein</option>
+    <option value="3">Normal</option>
+    <option value="4">Groß</option>
+    <option value="5">Sehr groß</option>
+    <option value="6">Riesig</option>
+  </select>
+  <input type="color" id="rtColor" value="#0b0b0b" title="Schriftfarbe">
+  <button type="button" data-rt="bold" title="Fett"><b>F</b></button>
+  <button type="button" data-rt="italic" title="Kursiv"><i>K</i></button>
+  <button type="button" data-rt="underline" title="Unterstrichen"><u>U</u></button>
+  <button type="button" data-rt="link" title="Link einfügen">🔗</button>
+  <button type="button" data-rt="unlink" title="Link entfernen">🔗✕</button>
+  <button type="button" data-rt="clear" title="Formatierung entfernen">✎✕</button>
+</div>
 
 <div id="undoToast" class="undo-toast">
   <span id="undoLabel"></span>
@@ -688,8 +744,10 @@ async function syncFromServer() {
     if (!res.ok) { setSyncStatus(await syncErrorKind(res)); return; }
     const serverState = await res.json();
     if (!serverState || typeof serverState !== "object" || !Object.keys(serverState).length) {
-      setSyncStatus("ok");
-      markInitialSyncDone(); // NAS hat noch keine Daten -> lokaler Stand ist maßgeblich
+      // Auf dem NAS liegt noch nichts - dann den lokalen Stand einmalig hochladen, damit
+      // er nicht nur auf diesem Gerät existiert. Hier kann nichts überschrieben werden.
+      markInitialSyncDone();
+      await uploadNow();
       return;
     }
     // Während die Antwort unterwegs war, kann etwas eingetragen worden sein - dann gilt
@@ -796,6 +854,234 @@ function esc(s) {
 }
 const nameOf = who => who === "A" ? state.settings.nameA : who === "B" ? state.settings.nameB : "Beide";
 
+/* ---------- Formatierbare Textfelder ---------- */
+// Formatierte Texte werden als HTML gespeichert. Damit nichts Schädliches ins Dashboard
+// gelangen kann (z. B. über eingefügte Inhalte aus dem Netz), wird beim Anzeigen UND beim
+// Speichern streng gefiltert: Erlaubt sind nur die unten aufgeführten Elemente, Stilangaben
+// und Link-Ziele - alles andere wird auf reinen Text zurückgeführt.
+const RT_ALLOWED_TAGS = ["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "SPAN", "A", "DIV", "P", "FONT"];
+const RT_ALLOWED_STYLES = ["color", "background-color", "font-size", "font-family", "font-weight", "font-style", "text-decoration"];
+const RT_FONT_SIZES = { "1": "0.7em", "2": "0.85em", "3": "1em", "4": "1.2em", "5": "1.5em", "6": "2em", "7": "2.5em" };
+
+function rtSanitize(html) {
+  const doc = new DOMParser().parseFromString("<div id='rt-root'>" + String(html == null ? "" : html) + "</div>", "text/html");
+  const src = doc.getElementById("rt-root");
+  const out = document.createElement("div");
+  if (!src) return "";
+
+  const copyStyles = (from, to) => {
+    for (const prop of RT_ALLOWED_STYLES) {
+      const v = from.style.getPropertyValue(prop);
+      // url(...) und expression(...) sind in Stilangaben nicht nötig und werden verworfen.
+      if (v && !/url\s*\(|expression\s*\(/i.test(v)) to.style.setProperty(prop, v);
+    }
+  };
+
+  const walk = (node, target) => {
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        target.appendChild(document.createTextNode(child.nodeValue));
+        continue;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) continue;
+      const tag = child.tagName;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "IFRAME" || tag === "OBJECT" || tag === "EMBED") {
+        continue; // samt Inhalt verwerfen
+      }
+      if (RT_ALLOWED_TAGS.indexOf(tag) === -1) {
+        walk(child, target); // Element weglassen, Inhalt behalten
+        continue;
+      }
+      // <font> auf <span> mit Stilangaben umschreiben (manche Browser erzeugen das noch)
+      if (tag === "FONT") {
+        const span = document.createElement("span");
+        if (child.getAttribute("color")) span.style.color = child.getAttribute("color");
+        if (child.getAttribute("face")) span.style.fontFamily = child.getAttribute("face");
+        const size = child.getAttribute("size");
+        if (size && RT_FONT_SIZES[size]) span.style.fontSize = RT_FONT_SIZES[size];
+        copyStyles(child, span);
+        target.appendChild(span);
+        walk(child, span);
+        continue;
+      }
+      const el = document.createElement(tag === "STRIKE" ? "S" : tag);
+      copyStyles(child, el);
+      if (tag === "A") {
+        const href = (child.getAttribute("href") || "").trim();
+        // Nur unbedenkliche Ziele - insbesondere kein "javascript:".
+        if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) {
+          el.setAttribute("href", href);
+          el.setAttribute("target", "_blank");
+          el.setAttribute("rel", "noopener noreferrer");
+        } else {
+          walk(child, target); // ungültiger Link -> nur der Text bleibt
+          continue;
+        }
+      }
+      target.appendChild(el);
+      walk(child, el);
+    }
+  };
+  walk(src, out);
+  return out.innerHTML;
+}
+
+// Formatierte Werte werden mit dieser unsichtbaren Markierung gespeichert. Nur so lässt
+// sich zweifelsfrei unterscheiden, ob ein gespeicherter Text bereits HTML ist oder noch
+// reiner Text aus der Zeit vor dieser Funktion - sonst würde z. B. ein alter Eintrag wie
+// "Müller & Sohn <wichtig>" beim Anzeigen verstümmelt.
+const RT_MARK = "<!--rt1-->";
+const isRichValue = v => typeof v === "string" && v.indexOf(RT_MARK) === 0;
+
+// Für die Anzeige in Listen/Tabellen. Alte, unformatierte Einträge werden weiterhin
+// zeichengetreu ausgegeben.
+function rich(value) {
+  const s = value == null ? "" : String(value);
+  return isRichValue(s) ? rtSanitize(s.slice(RT_MARK.length)) : esc(s);
+}
+// Reiner Text (z. B. für Prüfungen und Dialoge) aus einem gespeicherten Wert.
+function richToText(value) {
+  const d = document.createElement("div");
+  d.innerHTML = rich(value);
+  return (d.textContent || "").trim();
+}
+// Reiner Text aus rohem HTML (z. B. aus einer Auswahl im Editor).
+function htmlToText(html) {
+  const d = document.createElement("div");
+  d.innerHTML = rtSanitize(html);
+  return (d.textContent || "").trim();
+}
+// Lesen/Schreiben funktioniert sowohl für normale Felder als auch für formatierbare.
+function fieldGet(id) {
+  const el = document.getElementById(id);
+  if (!el) return "";
+  if (!el.classList || !el.classList.contains("rt")) return el.value.trim();
+  const clean = rtSanitize(el.innerHTML);
+  return htmlToText(clean) === "" ? "" : RT_MARK + clean;
+}
+function fieldSet(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.classList && el.classList.contains("rt")) el.innerHTML = rich(value);
+  else el.value = value;
+}
+function fieldEmpty(id) { return richToText(fieldGet(id)) === ""; }
+
+// Eine gemeinsame Formatierungsleiste für alle Felder - das hält die Oberfläche besonders
+// auf dem Handy schlank, statt über jedem Feld eine eigene Leiste anzuzeigen.
+let rtActiveField = null;
+let rtSavedRange = null;
+const rtToolbar = document.getElementById("rtToolbar");
+
+// Die Rückgängig-Leiste sitzt am selben Bildschirmrand wie die Formatierungsleiste.
+// Ihre Höhe hängt davon ab, wie viele Zeilen die Knöpfe brauchen - deshalb wird sie
+// gemessen statt geschätzt, damit sich beide nie gegenseitig verdecken.
+function rtLiftUndoBar() {
+  const toast = document.getElementById("undoToast");
+  if (!toast) return;
+  if (rtToolbar.classList.contains("show")) {
+    toast.style.bottom = (rtToolbar.getBoundingClientRect().height + 24) + "px";
+  } else {
+    toast.style.bottom = "";
+  }
+}
+window.addEventListener("resize", rtLiftUndoBar);
+
+function rtSaveSelection() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount && rtActiveField && rtActiveField.contains(sel.anchorNode)) {
+    rtSavedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+function rtRestoreSelection() {
+  if (!rtActiveField) return;
+  rtActiveField.focus();
+  if (!rtSavedRange) return;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(rtSavedRange);
+}
+function rtApply(fn) {
+  rtRestoreSelection();
+  fn();
+  rtSaveSelection();
+  if (rtActiveField) rtActiveField.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+document.addEventListener("focusin", e => {
+  const field = e.target.closest && e.target.closest(".rt");
+  if (field) {
+    rtActiveField = field;
+    rtToolbar.classList.add("show");
+    rtLiftUndoBar();
+  } else if (!e.target.closest || !e.target.closest("#rtToolbar")) {
+    rtToolbar.classList.remove("show");
+    rtLiftUndoBar();
+    rtActiveField = null;
+  }
+});
+document.addEventListener("selectionchange", rtSaveSelection);
+// Klicks in der Leiste dürfen die Markierung im Textfeld nicht verlieren.
+rtToolbar.addEventListener("mousedown", e => e.preventDefault());
+
+rtToolbar.addEventListener("click", e => {
+  const btn = e.target.closest("button[data-rt]");
+  if (!btn || !rtActiveField) return;
+  const cmd = btn.dataset.rt;
+  if (cmd === "link") {
+    const selected = htmlToText(rtSavedRange ? (() => {
+      const d = document.createElement("div"); d.appendChild(rtSavedRange.cloneContents()); return d.innerHTML;
+    })() : "");
+    const url = prompt("Adresse des Links (z. B. https://beispiel.de):", "https://");
+    if (!url) return;
+    if (!/^(https?:\/\/|mailto:|tel:)/i.test(url.trim())) {
+      alert("Bitte eine vollständige Adresse angeben, die mit https:// beginnt.");
+      return;
+    }
+    rtApply(() => {
+      if (!selected) {
+        // Ohne Markierung: den Linktext einfügen und verlinken
+        document.execCommand("insertHTML", false,
+          `<a href="${esc(url.trim())}" target="_blank" rel="noopener noreferrer">${esc(url.trim())}</a>&nbsp;`);
+      } else {
+        document.execCommand("createLink", false, url.trim());
+      }
+    });
+    return;
+  }
+  if (cmd === "unlink") { rtApply(() => document.execCommand("unlink")); return; }
+  if (cmd === "clear")  { rtApply(() => { document.execCommand("removeFormat"); document.execCommand("unlink"); }); return; }
+  rtApply(() => document.execCommand(cmd));
+});
+document.getElementById("rtColor").addEventListener("input", e => {
+  if (rtActiveField) rtApply(() => document.execCommand("foreColor", false, e.target.value));
+});
+document.getElementById("rtSize").addEventListener("change", e => {
+  if (rtActiveField && e.target.value) rtApply(() => document.execCommand("fontSize", false, e.target.value));
+  e.target.value = "";
+});
+document.getElementById("rtFont").addEventListener("change", e => {
+  if (rtActiveField && e.target.value) rtApply(() => document.execCommand("fontName", false, e.target.value));
+  e.target.value = "";
+});
+// Eingefügte Inhalte (z. B. aus dem Browser) sofort bereinigen.
+document.addEventListener("paste", e => {
+  const field = e.target.closest && e.target.closest(".rt");
+  if (!field) return;
+  e.preventDefault();
+  const html = e.clipboardData.getData("text/html");
+  const text = e.clipboardData.getData("text/plain");
+  document.execCommand("insertHTML", false, html ? rtSanitize(html) : esc(text));
+});
+// In einzeiligen Feldern schickt Enter das Formular ab (wie bei einem normalen Eingabefeld).
+document.addEventListener("keydown", e => {
+  const field = e.target.closest && e.target.closest(".rt");
+  if (!field || field.classList.contains("multiline") || e.key !== "Enter" || e.shiftKey) return;
+  e.preventDefault();
+  const form = field.closest("form");
+  if (form) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true }));
+});
+
 /* ---------- Tabs ---------- */
 document.getElementById("mainNav").addEventListener("change", e => {
   const tab = e.target.value;
@@ -855,7 +1141,7 @@ function renderOverview() {
 
   const topics = state.topics.filter(t => !t.done).slice(0, 6);
   document.getElementById("ovTopics").innerHTML = topics.length
-    ? topics.map(t => `<li><span>•</span><span class="grow">${esc(t.text)}</span></li>`).join("")
+    ? topics.map(t => `<li><span>•</span><span class="grow">${rich(t.text)}</span></li>`).join("")
     : `<li><span class="empty">Noch keine Themen gesammelt.</span></li>`;
 }
 
@@ -863,18 +1149,19 @@ function renderOverview() {
 let editingTopicId = null;
 function resetTopicForm() {
   editingTopicId = null;
-  document.getElementById("topicInput").value = "";
+  fieldSet("topicInput", "");
   document.getElementById("topicSubmitBtn").textContent = "Hinzufügen";
   document.getElementById("topicCancelBtn").style.display = "none";
 }
 document.getElementById("topicForm").addEventListener("submit", e => {
   e.preventDefault();
-  const input = document.getElementById("topicInput");
+  if (fieldEmpty("topicInput")) return;
+  const text = fieldGet("topicInput");
   if (editingTopicId) {
     const t = state.topics.find(x => x.id === editingTopicId);
-    t.text = input.value.trim();
+    t.text = text;
   } else {
-    state.topics.push({ id: uid(), text: input.value.trim(), done: false });
+    state.topics.push({ id: uid(), text, done: false });
   }
   resetTopicForm();
   save(); renderAll();
@@ -885,7 +1172,7 @@ function renderTopics() {
   list.innerHTML = state.topics.map(t => `
     <li class="${t.done ? "done" : ""}">
       <input type="checkbox" ${t.done ? "checked" : ""} data-topic="${t.id}">
-      <span class="grow">${esc(t.text)}</span>
+      <span class="grow">${rich(t.text)}</span>
       <button class="icon" data-edit-topic="${t.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-topic="${t.id}" title="Löschen">✕</button>
     </li>`).join("") || `<div class="empty">Noch keine Themen – schreibt einfach auf, was euch einfällt.</div>`;
@@ -896,7 +1183,7 @@ document.getElementById("topicList").addEventListener("click", e => {
   const edit = e.target.closest("[data-edit-topic]");
   if (edit) {
     const t = state.topics.find(x => x.id === edit.dataset.editTopic);
-    document.getElementById("topicInput").value = t.text;
+    fieldSet("topicInput", t.text);
     document.getElementById("topicInput").focus();
     editingTopicId = t.id;
     document.getElementById("topicSubmitBtn").textContent = "Speichern";
@@ -916,25 +1203,26 @@ document.getElementById("topicList").addEventListener("click", e => {
 let editingProtocolId = null;
 function resetProtocolForm() {
   editingProtocolId = null;
-  document.getElementById("protocolTitle").value = "";
-  document.getElementById("protocolNotes").value = "";
+  fieldSet("protocolTitle", "");
+  fieldSet("protocolNotes", "");
   document.getElementById("protocolDate").value = todayStr();
   document.getElementById("protocolSubmitBtn").textContent = "Protokoll speichern";
   document.getElementById("protocolCancelBtn").style.display = "none";
 }
 document.getElementById("protocolForm").addEventListener("submit", e => {
   e.preventDefault();
+  if (fieldEmpty("protocolTitle")) { alert("Bitte einen Titel eingeben."); return; }
   if (editingProtocolId) {
     const p = state.protocols.find(x => x.id === editingProtocolId);
     p.date = document.getElementById("protocolDate").value;
-    p.title = document.getElementById("protocolTitle").value.trim();
-    p.notes = document.getElementById("protocolNotes").value.trim();
+    p.title = fieldGet("protocolTitle");
+    p.notes = fieldGet("protocolNotes");
   } else {
     state.protocols.push({
       id: uid(),
       date: document.getElementById("protocolDate").value,
-      title: document.getElementById("protocolTitle").value.trim(),
-      notes: document.getElementById("protocolNotes").value.trim()
+      title: fieldGet("protocolTitle"),
+      notes: fieldGet("protocolNotes")
     });
   }
   resetProtocolForm();
@@ -946,10 +1234,10 @@ function renderProtocols() {
   const sorted = [...state.protocols].sort((a, b) => b.date.localeCompare(a.date));
   el.innerHTML = sorted.map(p => `
     <details class="protocol">
-      <summary><span class="p-title">${esc(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
+      <summary><span class="p-title">${rich(p.title)}</span><span class="p-date">${fmtDate(p.date)}</span>
         <button class="icon" data-edit-protocol="${p.id}" title="Bearbeiten">✏️</button>
         <button class="icon" data-del-protocol="${p.id}" title="Löschen">✕</button></summary>
-      <div class="p-body">${esc(p.notes) || "<i>Keine Notizen.</i>"}</div>
+      <div class="p-body">${rich(p.notes) || "<i>Keine Notizen.</i>"}</div>
     </details>`).join("") || `<div class="empty">Noch keine Protokolle. Nach eurem ersten Meeting einfach oben eintragen.</div>`;
 }
 document.getElementById("protocolList").addEventListener("click", e => {
@@ -958,8 +1246,8 @@ document.getElementById("protocolList").addEventListener("click", e => {
     e.preventDefault();
     const p = state.protocols.find(x => x.id === edit.dataset.editProtocol);
     document.getElementById("protocolDate").value = p.date;
-    document.getElementById("protocolTitle").value = p.title;
-    document.getElementById("protocolNotes").value = p.notes;
+    fieldSet("protocolTitle", p.title);
+    fieldSet("protocolNotes", p.notes);
     editingProtocolId = p.id;
     document.getElementById("protocolSubmitBtn").textContent = "Speichern";
     document.getElementById("protocolCancelBtn").style.display = "";
@@ -1024,7 +1312,7 @@ document.getElementById("monthNext").addEventListener("click", () => { currentMo
 let editingExpenseId = null;
 function resetExpenseForm() {
   editingExpenseId = null;
-  document.getElementById("expDesc").value = "";
+  fieldSet("expDesc", "");
   document.getElementById("expAmount").value = "";
   document.getElementById("expBearer").value = "both";
   document.getElementById("expDate").value = currentMonth;
@@ -1035,9 +1323,10 @@ document.getElementById("expenseForm").addEventListener("submit", e => {
   e.preventDefault();
   const amount = parseAmount(document.getElementById("expAmount").value);
   if (amount === null || amount <= 0) { alert("Bitte einen gültigen Betrag eingeben, z. B. 12,50"); return; }
+  if (fieldEmpty("expDesc")) { alert("Bitte eine Beschreibung eingeben."); return; }
   const fields = {
     date: document.getElementById("expDate").value,
-    desc: document.getElementById("expDesc").value.trim(),
+    desc: fieldGet("expDesc"),
     amount,
     payer: document.getElementById("expPayer").value,
     category: document.getElementById("expCategory").value,
@@ -1060,7 +1349,7 @@ document.getElementById("expCancelBtn").addEventListener("click", resetExpenseFo
 let editingFixedCostId = null;
 function resetFixedCostForm() {
   editingFixedCostId = null;
-  document.getElementById("fcDesc").value = "";
+  fieldSet("fcDesc", "");
   document.getElementById("fcAmount").value = "";
   document.getElementById("fcBearer").value = "both";
   document.getElementById("fcSubmitBtn").textContent = "Hinzufügen";
@@ -1070,8 +1359,9 @@ document.getElementById("fixedCostForm").addEventListener("submit", e => {
   e.preventDefault();
   const amount = parseAmount(document.getElementById("fcAmount").value);
   if (amount === null || amount <= 0) { alert("Bitte einen gültigen Betrag eingeben, z. B. 12,50"); return; }
+  if (fieldEmpty("fcDesc")) { alert("Bitte eine Beschreibung eingeben."); return; }
   const fields = {
-    desc: document.getElementById("fcDesc").value.trim(),
+    desc: fieldGet("fcDesc"),
     amount,
     payer: document.getElementById("fcPayer").value,
     category: document.getElementById("fcCategory").value,
@@ -1093,7 +1383,7 @@ function renderFixedCostList() {
   el.innerHTML = state.fixedCosts.map(fc => `
     <li>
       <span class="who-dot who-${fc.payer.toLowerCase()}" title="${esc(nameOf(fc.payer))}"></span>
-      <span class="grow">${esc(fc.desc)} <span style="color:var(--text-muted); font-size:12px;">(${esc(fc.category)})</span></span>
+      <span class="grow">${rich(fc.desc)} <span style="color:var(--text-muted); font-size:12px;">(${esc(fc.category)})</span></span>
       ${bearerOf(fc) !== "both" ? `<span class="badge solo">100 % ${esc(nameOf(bearerOf(fc)))}</span>` : ""}
       <span class="badge">${eur.format(fc.amount)}</span>
       <button class="icon" data-edit-fc="${fc.id}" title="Bearbeiten">✏️</button>
@@ -1104,7 +1394,7 @@ document.getElementById("fixedCostList").addEventListener("click", e => {
   const edit = e.target.closest("[data-edit-fc]");
   if (edit) {
     const fc = state.fixedCosts.find(x => x.id === edit.dataset.editFc);
-    document.getElementById("fcDesc").value = fc.desc;
+    fieldSet("fcDesc", fc.desc);
     document.getElementById("fcAmount").value = fc.amount.toFixed(2).replace(".", ",");
     document.getElementById("fcPayer").value = fc.payer;
     document.getElementById("fcCategory").value = fc.category;
@@ -1178,7 +1468,7 @@ function renderExpenseTable() {
   const tbody = document.getElementById("expenseTable");
   tbody.innerHTML = list.map(e => `
     <tr>
-      <td>${esc(e.desc)}${e.fixedCostId ? ` <span class="badge" title="Automatisch aus Fixkosten eingetragen">🔁</span>` : ""}</td>
+      <td>${rich(e.desc)}${e.fixedCostId ? ` <span class="badge" title="Automatisch aus Fixkosten eingetragen">🔁</span>` : ""}</td>
       <td><span class="badge">${esc(e.category)}</span></td>
       <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="who-dot who-${e.payer.toLowerCase()}"></span>${esc(nameOf(e.payer))}${bearerOf(e) !== "both" ? ` <span class="badge solo">100 % ${esc(nameOf(bearerOf(e)))}</span>` : ""}</span></td>
       <td class="num">${eur.format(e.amount)}</td>
@@ -1195,7 +1485,7 @@ document.getElementById("expenseTable").addEventListener("click", e => {
   if (edit) {
     const x = state.expenses.find(v => v.id === edit.dataset.editExp);
     document.getElementById("expDate").value = x.date;
-    document.getElementById("expDesc").value = x.desc;
+    fieldSet("expDesc", x.desc);
     document.getElementById("expAmount").value = x.amount.toFixed(2).replace(".", ",");
     document.getElementById("expPayer").value = x.payer;
     document.getElementById("expCategory").value = x.category;
@@ -1322,7 +1612,7 @@ document.getElementById("costChart").addEventListener("mouseleave", () => toolti
 let editingTodoId = null;
 function resetTodoForm() {
   editingTodoId = null;
-  document.getElementById("todoInput").value = "";
+  fieldSet("todoInput", "");
   document.getElementById("todoDate").value = "";
   document.getElementById("todoDeadline").value = "";
   document.getElementById("todoImportant").checked = false;
@@ -1331,8 +1621,9 @@ function resetTodoForm() {
 }
 document.getElementById("todoForm").addEventListener("submit", e => {
   e.preventDefault();
+  if (fieldEmpty("todoInput")) return;
   const fields = {
-    text: document.getElementById("todoInput").value.trim(),
+    text: fieldGet("todoInput"),
     who: document.getElementById("todoWho").value,
     date: document.getElementById("todoDate").value,
     deadline: document.getElementById("todoDeadline").value,
@@ -1356,7 +1647,7 @@ function todoRow(t, opts) {
         ? `<span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>`
         : `<input type="checkbox" ${t.done ? "checked" : ""} data-todo="${t.id}">
       <span class="who-dot who-${t.who === "both" ? "both" : t.who.toLowerCase()}" title="${esc(nameOf(t.who))}"></span>`}
-      <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${esc(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
+      <span class="grow"${t.important ? ' style="font-weight:700;"' : ""}>${t.important ? "⭐ " : ""}${rich(t.text)} <span style="color:var(--text-muted); font-size:12px;">(${esc(nameOf(t.who))})</span></span>
       ${t.date ? `<span class="badge">📅 ${fmtDate(t.date)}</span>` : ""}
       ${t.deadline ? `<span class="badge${overdue ? " overdue" : ""}">⏳ ${fmtDate(t.deadline)}</span>` : ""}
       ${opts.readonly ? "" : opts.compact ? "" : `<button class="icon" data-edit-todo="${t.id}" title="Bearbeiten">✏️</button>
@@ -1386,7 +1677,7 @@ function handleTodoListClick(e) {
   const edit = e.target.closest("[data-edit-todo]");
   if (edit) {
     const t = state.todos.find(x => x.id === edit.dataset.editTodo);
-    document.getElementById("todoInput").value = t.text;
+    fieldSet("todoInput", t.text);
     document.getElementById("todoWho").value = t.who;
     document.getElementById("todoDate").value = t.date || "";
     document.getElementById("todoDeadline").value = t.deadline || "";
@@ -1416,18 +1707,19 @@ document.getElementById("clearDoneTodos").addEventListener("click", () => {
 const editingGiftId = { A: null, B: null };
 function resetGiftForm(person) {
   editingGiftId[person] = null;
-  document.getElementById("giftInput" + person).value = "";
+  fieldSet("giftInput" + person, "");
   document.getElementById("giftSubmit" + person).textContent = "+";
   document.getElementById("giftCancel" + person).style.display = "none";
 }
 function bindGiftForm(person) {
   document.getElementById("giftForm" + person).addEventListener("submit", e => {
     e.preventDefault();
-    const input = document.getElementById("giftInput" + person);
+    if (fieldEmpty("giftInput" + person)) return;
+    const text = fieldGet("giftInput" + person);
     if (editingGiftId[person]) {
-      state.gifts[person].find(x => x.id === editingGiftId[person]).text = input.value.trim();
+      state.gifts[person].find(x => x.id === editingGiftId[person]).text = text;
     } else {
-      state.gifts[person].push({ id: uid(), text: input.value.trim(), done: false });
+      state.gifts[person].push({ id: uid(), text, done: false });
     }
     resetGiftForm(person);
     save(); renderAll();
@@ -1439,7 +1731,7 @@ function bindGiftForm(person) {
     const edit = e.target.closest("[data-edit-gift]");
     if (edit) {
       const g = state.gifts[person].find(x => x.id === edit.dataset.editGift);
-      document.getElementById("giftInput" + person).value = g.text;
+      fieldSet("giftInput" + person, g.text);
       document.getElementById("giftInput" + person).focus();
       editingGiftId[person] = g.id;
       document.getElementById("giftSubmit" + person).textContent = "Speichern";
@@ -1464,7 +1756,7 @@ function renderGifts() {
     ul.innerHTML = state.gifts[person].map(g => `
       <li class="${g.done ? "done" : ""}">
         <input type="checkbox" ${g.done ? "checked" : ""} data-gift="${g.id}" title="Schon besorgt?">
-        <span class="grow">${esc(g.text)}</span>
+        <span class="grow">${rich(g.text)}</span>
         <button class="icon" data-edit-gift="${g.id}" title="Bearbeiten">✏️</button>
         <button class="icon" data-del-gift="${g.id}" title="Löschen">✕</button>
       </li>`).join("") || `<div class="empty">Noch keine Ideen.</div>`;
@@ -1474,21 +1766,22 @@ function renderGifts() {
 let editingGiftOtherId = null;
 function resetGiftOthersForm() {
   editingGiftOtherId = null;
-  document.getElementById("giftInputOthersWho").value = "";
-  document.getElementById("giftInputOthersIdea").value = "";
+  fieldSet("giftInputOthersWho", "");
+  fieldSet("giftInputOthersIdea", "");
   document.getElementById("giftOthersSubmitBtn").textContent = "+";
   document.getElementById("giftOthersCancelBtn").style.display = "none";
 }
 document.getElementById("giftFormOthers").addEventListener("submit", e => {
   e.preventDefault();
-  const who = document.getElementById("giftInputOthersWho");
-  const idea = document.getElementById("giftInputOthersIdea");
+  if (fieldEmpty("giftInputOthersWho") || fieldEmpty("giftInputOthersIdea")) return;
+  const who = fieldGet("giftInputOthersWho");
+  const idea = fieldGet("giftInputOthersIdea");
   if (editingGiftOtherId) {
     const g = state.gifts.others.find(x => x.id === editingGiftOtherId);
-    g.who = who.value.trim();
-    g.text = idea.value.trim();
+    g.who = who;
+    g.text = idea;
   } else {
-    state.gifts.others.push({ id: uid(), who: who.value.trim(), text: idea.value.trim(), done: false });
+    state.gifts.others.push({ id: uid(), who, text: idea, done: false });
   }
   resetGiftOthersForm();
   save(); renderAll();
@@ -1500,8 +1793,8 @@ document.getElementById("giftListOthers").addEventListener("click", e => {
   const edit = e.target.closest("[data-edit-gift-other]");
   if (edit) {
     const g = state.gifts.others.find(x => x.id === edit.dataset.editGiftOther);
-    document.getElementById("giftInputOthersWho").value = g.who;
-    document.getElementById("giftInputOthersIdea").value = g.text;
+    fieldSet("giftInputOthersWho", g.who);
+    fieldSet("giftInputOthersIdea", g.text);
     document.getElementById("giftInputOthersWho").focus();
     editingGiftOtherId = g.id;
     document.getElementById("giftOthersSubmitBtn").textContent = "Speichern";
@@ -1522,7 +1815,7 @@ function renderGiftsOthers() {
   ul.innerHTML = state.gifts.others.map(g => `
     <li class="${g.done ? "done" : ""}">
       <input type="checkbox" ${g.done ? "checked" : ""} data-gift-other="${g.id}" title="Schon besorgt?">
-      <span class="grow"><b>${esc(g.who)}</b> — ${esc(g.text)}</span>
+      <span class="grow"><b>${rich(g.who)}</b> — ${rich(g.text)}</span>
       <button class="icon" data-edit-gift-other="${g.id}" title="Bearbeiten">✏️</button>
       <button class="icon" data-del-gift-other="${g.id}" title="Löschen">✕</button>
     </li>`).join("") || `<div class="empty">Noch keine Ideen für andere gesammelt.</div>`;
@@ -1532,22 +1825,23 @@ function renderGiftsOthers() {
 let editingProjectId = null;
 function resetProjectForm() {
   editingProjectId = null;
-  document.getElementById("projectName").value = "";
-  document.getElementById("projectNotes").value = "";
+  fieldSet("projectName", "");
+  fieldSet("projectNotes", "");
   document.getElementById("projectSubmitBtn").textContent = "Projekt anlegen";
   document.getElementById("projectCancelBtn").style.display = "none";
 }
 document.getElementById("projectForm").addEventListener("submit", e => {
   e.preventDefault();
+  if (fieldEmpty("projectName")) return;
   if (editingProjectId) {
     const p = state.projects.find(x => x.id === editingProjectId);
-    p.name = document.getElementById("projectName").value.trim();
-    p.notes = document.getElementById("projectNotes").value.trim();
+    p.name = fieldGet("projectName");
+    p.notes = fieldGet("projectNotes");
   } else {
     state.projects.push({
       id: uid(),
-      name: document.getElementById("projectName").value.trim(),
-      notes: document.getElementById("projectNotes").value.trim(),
+      name: fieldGet("projectName"),
+      notes: fieldGet("projectNotes"),
       items: []
     });
   }
@@ -1566,7 +1860,7 @@ function renderProjects() {
     const itemRow = i => `
           <li class="${i.done ? "done" : ""}">
             <input type="checkbox" ${i.done ? "checked" : ""} data-pitem="${p.id}:${i.id}">
-            <span class="grow">${esc(i.text)}</span>
+            <span class="grow">${rich(i.text)}</span>
             <button class="icon" data-edit-pitem="${p.id}:${i.id}" title="Bearbeiten">✏️</button>
             <button class="icon" data-del-pitem="${p.id}:${i.id}" title="Löschen">✕</button>
           </li>`;
@@ -1574,13 +1868,13 @@ function renderProjects() {
     const editingItem = editingHere ? p.items.find(i => i.id === editingProjectItem.iid) : null;
     return `
     <div class="project-card">
-      <h3><span class="p-title">${esc(p.name)}</span>
+      <h3><span class="p-title">${rich(p.name)}</span>
         <span class="h3-actions">
           <button class="icon" data-edit-project="${p.id}" title="Bearbeiten">✏️</button>
           <button class="icon" data-del-project="${p.id}" title="Projekt löschen">✕</button>
         </span>
       </h3>
-      ${p.notes ? `<div class="p-notes">${esc(p.notes)}</div>` : ""}
+      ${p.notes ? `<div class="p-notes">${rich(p.notes)}</div>` : ""}
       ${p.items.length ? `
       <div style="font-size:12px; color:var(--text-muted);">${done.length} von ${p.items.length} Schritten erledigt · ${pct} %</div>
       <div class="meter"><div style="width:${pct}%"></div></div>` : ""}
@@ -1597,7 +1891,7 @@ function renderProjects() {
         <ul class="plain">${done.map(itemRow).join("")}</ul>
       </details>` : ""}
       <form class="row" data-pform="${p.id}" style="margin-top:8px; margin-bottom:0;">
-        <input type="text" value="${editingItem ? esc(editingItem.text) : ""}" placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;" required>
+        <div class="rt" contenteditable="true" data-pitem-input data-placeholder="Neuer Schritt, z. B. „Flüge buchen“" style="flex:1;">${editingItem ? rich(editingItem.text) : ""}</div>
         <button class="primary" type="submit">${editingItem ? "Speichern" : "+"}</button>
         ${editingItem ? `<button class="ghost" type="button" data-cancel-pitem>Abbrechen</button>` : ""}
       </form>
@@ -1608,14 +1902,17 @@ document.getElementById("projectList").addEventListener("submit", e => {
   const form = e.target.closest("form[data-pform]");
   if (!form) return;
   e.preventDefault();
-  const input = form.querySelector("input");
+  const input = form.querySelector("[data-pitem-input]");
+  const clean = rtSanitize(input.innerHTML);
+  if (htmlToText(clean) === "") return;
+  const text = RT_MARK + clean;
   const pid = form.dataset.pform;
   const proj = state.projects.find(p => p.id === pid);
   if (editingProjectItem && editingProjectItem.pid === pid) {
-    proj.items.find(i => i.id === editingProjectItem.iid).text = input.value.trim();
+    proj.items.find(i => i.id === editingProjectItem.iid).text = text;
     editingProjectItem = null;
   } else {
-    proj.items.push({ id: uid(), text: input.value.trim(), done: false });
+    proj.items.push({ id: uid(), text, done: false });
   }
   save(); renderAll();
 });
@@ -1634,7 +1931,7 @@ document.getElementById("projectList").addEventListener("click", e => {
     editingProjectItem = { pid, iid };
     renderAll();
     const form = document.querySelector('form[data-pform="' + pid + '"]');
-    if (form) form.querySelector("input").focus();
+    if (form) form.querySelector("[data-pitem-input]").focus();
     return;
   }
   const delI = e.target.closest("[data-del-pitem]");
@@ -1654,8 +1951,8 @@ document.getElementById("projectList").addEventListener("click", e => {
   const editProject = e.target.closest("[data-edit-project]");
   if (editProject) {
     const p = state.projects.find(x => x.id === editProject.dataset.editProject);
-    document.getElementById("projectName").value = p.name;
-    document.getElementById("projectNotes").value = p.notes;
+    fieldSet("projectName", p.name);
+    fieldSet("projectNotes", p.notes);
     editingProjectId = p.id;
     document.getElementById("projectSubmitBtn").textContent = "Speichern";
     document.getElementById("projectCancelBtn").style.display = "";
@@ -1679,12 +1976,17 @@ document.getElementById("namesForm").addEventListener("submit", e => {
   state.settings.nameB = document.getElementById("nameB").value.trim() || "Person 2";
   save(); renderAll();
 });
-document.getElementById("apiKeyForm").addEventListener("submit", e => {
+document.getElementById("apiKeyForm").addEventListener("submit", async e => {
   e.preventDefault();
   state.settings.apiKey = document.getElementById("apiKey").value.trim();
-  save(); renderAll();
-  syncFromServer();
-  alert("Gespeichert! Wird jetzt mit dem NAS abgeglichen.");
+  // Bewusst NICHT save(): Das würde den lokalen Stand als "eigene, noch nicht übertragene
+  // Änderung" markieren und beim Verbinden hochladen - auf einem frisch eingerichteten
+  // Gerät würde damit der leere lokale Stand die Daten auf dem NAS überschreiben.
+  // Stattdessen gilt beim Verbinden der Stand auf dem NAS.
+  saveLocalOnly();
+  renderAll();
+  await syncFromServer();
+  alert("Gespeichert! Der Stand vom NAS wurde geladen.");
 });
 
 /* ---------- Sicherungen auf dem NAS ansehen & wiederherstellen ---------- */
