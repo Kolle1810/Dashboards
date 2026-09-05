@@ -987,6 +987,65 @@ function rtLiftUndoBar() {
 }
 window.addEventListener("resize", rtLiftUndoBar);
 
+// Fügt einen Link ein bzw. bearbeitet einen bestehenden. Gefragt wird nach dem ANGEZEIGTEN
+// Text und der Adresse - so kann dort ein selbst gewähltes Wort stehen statt der ganzen URL.
+function rtLinkAtCursor() {
+  if (!rtSavedRange || !rtActiveField) return null;
+  let node = rtSavedRange.startContainer;
+  while (node && node !== rtActiveField) {
+    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "A") return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+// Führt Eingaben wie "beispiel.de" zu einer vollständigen Adresse. Gibt "" zurück, wenn die
+// Eingabe ein anderes (nicht erlaubtes) Schema wie "javascript:" verwendet - solche Eingaben
+// werden abgelehnt statt stillschweigend in eine unsinnige Adresse umgeformt.
+function rtNormalizeUrl(raw) {
+  const url = String(raw || "").trim();
+  if (!url) return "";
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(url)) return url;
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
+  // Ein Doppelpunkt hinter etwas mit Punkt ist kein Schema, sondern z. B. "beispiel.de:8080".
+  if (scheme && scheme[1].indexOf(".") === -1) return "";
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) return "mailto:" + url;   // E-Mail-Adresse
+  return "https://" + url.replace(/^\/+/, "");
+}
+function rtInsertOrEditLink() {
+  const existing = rtLinkAtCursor();
+  const selectedText = htmlToText(rtSavedRange ? (() => {
+    const d = document.createElement("div"); d.appendChild(rtSavedRange.cloneContents()); return d.innerHTML;
+  })() : "");
+
+  const textVorgabe = existing ? existing.textContent : selectedText;
+  const urlVorgabe = existing ? existing.getAttribute("href") : "https://";
+
+  const text = prompt("Welches Wort soll als Link angezeigt werden?", textVorgabe || "");
+  if (text === null) return;
+  if (!text.trim()) { alert("Bitte ein Wort angeben, das angezeigt werden soll."); return; }
+
+  const url = rtNormalizeUrl(prompt("Wohin soll der Link führen? (z. B. beispiel.de)", urlVorgabe));
+  if (!url) return;
+  if (!/^(https?:\/\/|mailto:|tel:)/i.test(url)) {
+    alert("Diese Adresse konnte nicht verwendet werden. Bitte z. B. https://beispiel.de eingeben.");
+    return;
+  }
+
+  if (existing) {
+    // Bestehenden Link an Ort und Stelle ändern - Text und Ziel.
+    existing.textContent = text.trim();
+    existing.setAttribute("href", url);
+    existing.setAttribute("target", "_blank");
+    existing.setAttribute("rel", "noopener noreferrer");
+    rtActiveField.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+  rtApply(() => {
+    document.execCommand("insertHTML", false,
+      `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(text.trim())}</a>&nbsp;`);
+  });
+}
+
 function rtSaveSelection() {
   const sel = window.getSelection();
   if (sel && sel.rangeCount && rtActiveField && rtActiveField.contains(sel.anchorNode)) {
@@ -1028,27 +1087,7 @@ rtToolbar.addEventListener("click", e => {
   const btn = e.target.closest("button[data-rt]");
   if (!btn || !rtActiveField) return;
   const cmd = btn.dataset.rt;
-  if (cmd === "link") {
-    const selected = htmlToText(rtSavedRange ? (() => {
-      const d = document.createElement("div"); d.appendChild(rtSavedRange.cloneContents()); return d.innerHTML;
-    })() : "");
-    const url = prompt("Adresse des Links (z. B. https://beispiel.de):", "https://");
-    if (!url) return;
-    if (!/^(https?:\/\/|mailto:|tel:)/i.test(url.trim())) {
-      alert("Bitte eine vollständige Adresse angeben, die mit https:// beginnt.");
-      return;
-    }
-    rtApply(() => {
-      if (!selected) {
-        // Ohne Markierung: den Linktext einfügen und verlinken
-        document.execCommand("insertHTML", false,
-          `<a href="${esc(url.trim())}" target="_blank" rel="noopener noreferrer">${esc(url.trim())}</a>&nbsp;`);
-      } else {
-        document.execCommand("createLink", false, url.trim());
-      }
-    });
-    return;
-  }
+  if (cmd === "link") { rtInsertOrEditLink(); return; }
   if (cmd === "unlink") { rtApply(() => document.execCommand("unlink")); return; }
   if (cmd === "clear")  { rtApply(() => { document.execCommand("removeFormat"); document.execCommand("unlink"); }); return; }
   rtApply(() => document.execCommand(cmd));

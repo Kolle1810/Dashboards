@@ -24,6 +24,12 @@ Formatierungsleiste. Beträge, Datumsangaben, Kategorien sowie eure Namen und
 der API-Schlüssel bleiben bewusst reine Eingabefelder – dort würde
 Formatierung die Berechnungen bzw. die Technik stören.
 
+**Links:** Ein Klick auf 🔗 fragt zuerst nach dem Wort, das angezeigt werden
+soll (z. B. „Rezept“), und danach nach der Adresse. Steht der Cursor in einem
+bestehenden Link, lassen sich Wort und Ziel darüber nachträglich ändern. Die
+Adresse darf verkürzt eingegeben werden – aus `beispiel.de` wird
+`https://beispiel.de`, aus `oma@example.org` wird ein E-Mail-Link.
+
 Eingefügte Inhalte werden dabei automatisch bereinigt: Erlaubt sind nur
 Textauszeichnungen und Links auf `https://`, `mailto:` oder `tel:` – alles
 andere (z. B. Skripte aus einer kopierten Webseite) wird zu reinem Text.
