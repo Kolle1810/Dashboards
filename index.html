@@ -218,6 +218,8 @@
     font-size: 12px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; z-index: 5;
   }
 
+  details.help { font-size: 14px; color: var(--text-secondary); margin: 4px 0 14px; }
+  details.help summary { cursor: pointer; color: var(--accent); font-weight: 600; }
   .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .month-nav .month-label { font-weight: 600; min-width: 150px; text-align: center; }
 
@@ -429,6 +431,11 @@
           <div class="sub" id="costSaldoSub">damit es fair (50/50) ist</div>
         </div>
       </div>
+
+      <details class="help" id="saldoDetails">
+        <summary>Wie kommt der Ausgleich zustande?</summary>
+        <div id="saldoBreakdown"></div>
+      </details>
 
       <h2 style="margin-top:6px;">Ausgaben nach Kategorie</h2>
       <div class="legend" id="chartLegend"></div>
@@ -1436,6 +1443,66 @@ function monthTotals(ym) {
   return { total, totalA, totalB: total - totalA, owedA, soloCount };
 }
 // paidA = was A tatsächlich bezahlt hat, owedA = was A davon tragen müsste.
+// Rechnet den Ausgleich Zeile für Zeile vor. Ohne diese Aufschlüsselung ist bei gemischten
+// Einträgen (mal 50/50, mal trägt eine Person alles) nicht nachvollziehbar, wie die Summe
+// zustande kommt - und genau das ist die häufigste Rückfrage.
+function renderSaldoBreakdown(ym, paidA, owedA) {
+  const el = document.getElementById("saldoBreakdown");
+  if (!el) return;
+  const list = monthExpenses(ym);
+  const nameA = state.settings.nameA, nameB = state.settings.nameB;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">In diesem Monat gibt es noch keine Ausgaben.</div>`;
+    return;
+  }
+  const traegtText = e => {
+    const b = bearerOf(e);
+    return b === "both" ? "beide je 50 %" : (b === "A" ? esc(nameA) + " allein" : esc(nameB) + " allein");
+  };
+  const zeilen = list.map(e => {
+    const anteilA = shareOfA(e);
+    return `<tr>
+      <td>${rich(e.desc)}</td>
+      <td>${esc(nameOf(e.payer))}</td>
+      <td class="num">${eur.format(e.amount)}</td>
+      <td>${traegtText(e)}</td>
+      <td class="num">${eur.format(anteilA)}</td>
+      <td class="num">${eur.format(e.amount - anteilA)}</td>
+    </tr>`;
+  }).join("");
+
+  const total = list.reduce((s2, e) => s2 + e.amount, 0);
+  const diff = paidA - owedA;
+  const schuldner = diff > 0 ? nameB : nameA;
+  const empfaenger = diff > 0 ? nameA : nameB;
+
+  const fazit = Math.abs(diff) < 0.005
+    ? `Beide haben genau so viel bezahlt, wie sie tragen müssen – nichts auszugleichen.`
+    : `${esc(nameA)} hat <b>${eur.format(paidA)}</b> bezahlt und müsste <b>${eur.format(owedA)}</b> tragen –
+       also ${diff > 0 ? "<b>mehr</b> bezahlt als nötig" : "<b>weniger</b> bezahlt als nötig"}.<br>
+       ${eur.format(paidA)} − ${eur.format(owedA)} = <b>${diff < 0 ? "−" : ""}${eur.format(Math.abs(diff))}</b>
+       → <b>${esc(schuldner)} zahlt ${eur.format(Math.abs(diff))} an ${esc(empfaenger)}</b>.`;
+
+  el.innerHTML = `
+    <p style="margin:8px 0;">„Anteil“ bedeutet: Wer trägt diesen Betrag wirtschaftlich – unabhängig davon, wer ihn bezahlt hat.</p>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr>
+          <th>Ausgabe</th><th>bezahlt von</th><th class="num">Betrag</th>
+          <th>wer trägt</th><th class="num">Anteil ${esc(nameA)}</th><th class="num">Anteil ${esc(nameB)}</th>
+        </tr></thead>
+        <tbody>${zeilen}</tbody>
+        <tfoot><tr style="font-weight:600; border-top:2px solid var(--baseline);">
+          <td>Summe</td><td></td><td class="num">${eur.format(total)}</td><td></td>
+          <td class="num">${eur.format(owedA)}</td><td class="num">${eur.format(total - owedA)}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <p style="margin:10px 0 0;"><b>${esc(nameA)} hat bezahlt:</b> ${eur.format(paidA)} ·
+       <b>${esc(nameB)} hat bezahlt:</b> ${eur.format(total - paidA)}</p>
+    <p style="margin:6px 0 0;">${fazit}</p>`;
+}
+
 function saldoText(paidA, owedA) {
   const diff = paidA - owedA; // >0: A hat mehr bezahlt, als A tragen müsste
   if (Math.abs(diff) < 0.005 ) return `<span class="saldo-good">Ausgeglichen ✔</span>`;
@@ -1585,6 +1652,7 @@ function renderCosts() {
   document.getElementById("costTotalA").textContent = eur.format(totalA);
   document.getElementById("costTotalB").textContent = eur.format(totalB);
   document.getElementById("costSaldo").innerHTML = saldoText(totalA, owedA);
+  renderSaldoBreakdown(currentMonth, totalA, owedA);
   document.getElementById("costSaldoSub").textContent = soloCount
     ? `${soloCount} Ausgabe${soloCount > 1 ? "n" : ""} nicht 50/50 geteilt`
     : "damit es fair (50/50) ist";
